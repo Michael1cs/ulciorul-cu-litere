@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Script pentru repararea diacriticelor în dicționarul românesc
-Transformă toate cele 983 cuvinte din fiecare set cu diacritice corecte
+Versiune reparată - folosește caractere Unicode directe
 """
 
 import json
@@ -12,80 +12,101 @@ import sys
 def add_romanian_diacritics(word):
     """
     Aplică reguli de transformare pentru diacriticele românești
+    Folosește caractere Unicode directe pentru a evita erorile de escape
     """
     if not word or not isinstance(word, str):
         return word
     
     result = word.upper()
     
-    # === REGULI PENTRU Ă ===
-    # Cuvinte care se termină în -A și sunt feminine/neutre
-    result = re.sub(r'\bART([A])\b', r'ART\u0102', result)  # ARTA → ARTĂ
-    result = re.sub(r'\bRAT([A])\b', r'RAT\u0102', result)  # RATA → RAȚĂ (greșit aici, va fi corectat mai jos)
-    result = re.sub(r'\bCAS([A])\b', r'CAS\u0102', result)  # CASA → CASĂ
-    result = re.sub(r'\bMAS([A])\b', r'MAS\u0102', result)  # MASA → MASĂ
-    result = re.sub(r'\bFAT([A])\b', r'FAT\u0102', result)  # FATA → FAȚA
-    result = re.sub(r'\bLUN([A])\b', r'LUN\u0102', result)  # LUNA → LUNA (nu se schimbă)
-    result = re.sub(r'\bVIN([A])\b', r'VIN\u0102', result)  # VINA → VINĂ
-    
-    # Substantive feminine în -Ă
-    result = re.sub(r'\bFRUMOAS([A])\b', r'FRUMOAS\u0102', result)  # FRUMOASA → FRUMOASĂ
-    result = re.sub(r'\bSTRAIN([A])\b', r'STR\u0102IN\u0102', result)  # STRAINA → STRĂINĂ
-    result = re.sub(r'\bROM[A]N([A])\b', r'ROM\u00C2N\u0102', result)  # ROMANA → ROMÂNA
+    # === REGULI PENTRU Ă (folosesc direct caracterul) ===
+    result = re.sub(r'\bARTA\b', 'ARTĂ', result)
+    result = re.sub(r'\bCASA\b', 'CASĂ', result)
+    result = re.sub(r'\bMASA\b', 'MASĂ', result)
+    result = re.sub(r'\bFATA\b', 'FAȚĂ', result)
+    result = re.sub(r'\bVINA\b', 'VINĂ', result)
+    result = re.sub(r'\bFRUMOASA\b', 'FRUMOASĂ', result)
+    result = re.sub(r'\bSTRAINA\b', 'STRĂINĂ', result)
+    result = re.sub(r'\bTATA\b', 'TATĂ', result)
+    result = re.sub(r'\bMAMA\b', 'MAMĂ', result)
     
     # === REGULI PENTRU Ț ===
-    # T în finale specifice
-    result = re.sub(r'\bRAT([A])\b', r'RA\u021A\u0102', result)  # RATA → RAȚĂ + Ă finale
-    result = re.sub(r'([^S])TAR([I])\b', r'\1\u021A\u0102R\2', result)  # TARI → ȚĂRI (nu STARI)
-    result = re.sub(r'\bTAR([A])\b', r'\u021A\u0102R\u0102', result)  # TARA → ȚARĂ
-    result = re.sub(r'\bSUNT\b', r'SUNT', result)  # SUNT rămâne la fel
-    result = re.sub(r'NATIUNE', r'NA\u021AIUNE', result)  # NATIUNE → NAȚIUNE
-    result = re.sub(r'STATIUNE', r'STA\u021AIUNE', result)  # STATIUNE → STAȚIUNE
-    result = re.sub(r'CONSTITUTIE', r'CONSTITU\u021AIE', result)  # CONSTITUTIE → CONSTITUȚIE
+    result = re.sub(r'\bRATA\b', 'RAȚĂ', result)
+    result = re.sub(r'\bRATE\b', 'RAȚE', result)
+    result = re.sub(r'\bTARI\b', 'ȚĂRI', result)
+    result = re.sub(r'\bTARA\b', 'ȚARĂ', result)
+    result = re.sub(r'\bTAREI\b', 'ȚĂREI', result)
+    result = re.sub(r'NATIUNE', 'NAȚIUNE', result)
+    result = re.sub(r'NATIUNI', 'NAȚIUNI', result)
+    result = re.sub(r'STATIUNE', 'STAȚIUNE', result)
+    result = re.sub(r'CONSTITUTIE', 'CONSTITUȚIE', result)
+    result = re.sub(r'ACTIUNE', 'ACȚIUNE', result)
+    result = re.sub(r'REVOLUTIE', 'REVOLUȚIE', result)
+    result = re.sub(r'INSTITUTIE', 'INSTITUȚIE', result)
     
     # === REGULI PENTRU Ș ===
-    # S în poziții specifice
-    result = re.sub(r'STIINTA', r'\u0218TIIN\u021A\u0102', result)  # STIINTA → ȘTIINȚĂ
-    result = re.sub(r'STIU', r'\u0218TIU', result)  # STIU → ȘTIU
-    result = re.sub(r'\bSCOALA\b', r'\u0218COAL\u0102', result)  # SCOALA → ȘCOALĂ
-    result = re.sub(r'ACTIUNE', r'AC\u021AIUNE', result)  # ACTIUNE → ACȚIUNE
+    result = re.sub(r'STIINTA', 'ȘTIINȚĂ', result)
+    result = re.sub(r'\bSTIU\b', 'ȘTIU', result)
+    result = re.sub(r'\bSCOALA\b', 'ȘCOALĂ', result)
+    result = re.sub(r'\bSTIRE\b', 'ȘTIRE', result)
+    result = re.sub(r'\bSTERG\b', 'ȘTERG', result)
+    result = re.sub(r'ACTIUNE', 'ACȚIUNE', result)
     
     # === REGULI PENTRU Î/Â ===
-    # Î la început și în prefixe
-    result = re.sub(r'\bINVAT', r'\u00CENV\u0102\u021A', result)  # INVATAT → ÎNVĂȚAT
-    result = re.sub(r'\bINTELEG', r'\u00CENA\u021AELEG', result)  # INTELEG → ÎNȚELEG
-    result = re.sub(r'\bINTREB', r'\u00CENTEREB', result)  # INTREBA → ÎNTREABĂ
-    result = re.sub(r'\bIMPART', r'\u00CEMPART', result)  # IMPART → ÎMPART
+    result = re.sub(r'\bINVAT', 'ÎNVĂȚ', result)
+    result = re.sub(r'\bINTELEG\b', 'ÎNȚELEG', result)
+    result = re.sub(r'\bINTREABA\b', 'ÎNTREABĂ', result)
+    result = re.sub(r'\bIMPART\b', 'ÎMPART', result)
+    result = re.sub(r'\bIMPREUNA\b', 'ÎMPREUNĂ', result)
+    result = re.sub(r'\bINTRU\b', 'ÎNTRU', result)
+    result = re.sub(r'\bINTREB\b', 'ÎNTREB', result)
     
-    # Â în mijlocul cuvintelor
-    result = re.sub(r'([A-Z])A([A-Z])', lambda m: m.group(1) + '\u00C2' + m.group(2) if should_be_a_circumflex(m.group(0)) else m.group(0), result)
+    # === REGULI PENTRU STÂNĂ ===
+    result = re.sub(r'\bSTANA\b', 'STÂNĂ', result)
+    result = re.sub(r'\bSTANE\b', 'STÂNE', result)
+    result = re.sub(r'\bSTANEI\b', 'STÂNEI', result)
     
-    # === REGULI PENTRU PARTICIPII ===
-    # Participii în -AT → -AT (majoritatea rămân la fel, dar cu transformări de bază)
-    result = re.sub(r'SARIT', r'S\u0102RIT', result)  # SARIT → SĂRIT
-    result = re.sub(r'FACUT', r'F\u0102CUT', result)  # FACUT → FĂCUT
+    # === PARTICIPII COMUNE ===
+    result = re.sub(r'\bSARIT\b', 'SĂRIT', result)
+    result = re.sub(r'\bSARITA\b', 'SĂRITĂ', result)
+    result = re.sub(r'\bSARITE\b', 'SĂRITE', result)
+    result = re.sub(r'\bSARITI\b', 'SĂRIȚI', result)
     
-    # === REGULI PENTRU FORME SPECIFICE ===
-    result = re.sub(r'\bSTAN([A])\b', r'ST\u00C2N\u0102', result)  # STANA → STÂNĂ
-    result = re.sub(r'\bTAT([A])\b', r'TAT\u0102', result)  # TATA → TATĂ
-    result = re.sub(r'\bMAM([A])\b', r'MAM\u0102', result)  # MAMA → MAMĂ
+    result = re.sub(r'\bFACUT\b', 'FĂCUT', result)
+    result = re.sub(r'\bFACUTA\b', 'FĂCUTĂ', result)
+    result = re.sub(r'\bFACUTE\b', 'FĂCUTE', result)
+    result = re.sub(r'\bFACUTI\b', 'FĂCUȚI', result)
+    
+    # === ADJECTIVE COMUNE ===
+    result = re.sub(r'\bFRUMOS\b', 'FRUMOS', result)  # rămâne la fel
+    result = re.sub(r'\bREAU\b', 'RĂU', result)
+    result = re.sub(r'\bREA\b', 'REA', result)  # rămâne la fel
+    
+    # === FORME VERBALE ===
+    result = re.sub(r'\bSA\b', 'SĂ', result)
+    result = re.sub(r'\bDIN\b', 'DIN', result)  # rămâne la fel
+    result = re.sub(r'\bCU\b', 'CU', result)    # rămâne la fel
+    
+    # === CUVINTE CU Â ===
+    result = re.sub(r'\bROMAN\b', 'ROMÂN', result)
+    result = re.sub(r'\bROMANA\b', 'ROMÂNA', result)
+    result = re.sub(r'\bROMANI\b', 'ROMÂNI', result)
+    result = re.sub(r'\bROMANE\b', 'ROMÂNE', result)
+    
+    result = re.sub(r'\bMINCA\b', 'MÂNCA', result)
+    result = re.sub(r'\bMINA\b', 'MÂNA', result)
+    result = re.sub(r'\bVINT\b', 'VÂNT', result)
+    result = re.sub(r'\bCANT\b', 'CÂNT', result)
     
     # === CORECTURI FINALE ===
-    # Corecturi pentru transformări duble sau greșite
-    result = re.sub(r'RA\u021A\u0102\u0102', r'RA\u021A\u0102', result)  # Corecție dublă
-    result = re.sub(r'\u0102\u0102', r'\u0102', result)  # Elimină Ă dublă
-    result = re.sub(r'\u021A\u021A', r'\u021A', result)  # Elimină Ț dublă
+    # Elimină diacritice duple dacă apar
+    result = re.sub(r'ĂĂ', 'Ă', result)
+    result = re.sub(r'ȚȚ', 'Ț', result)
+    result = re.sub(r'ȘȘ', 'Ș', result)
+    result = re.sub(r'ÎÎ', 'Î', result)
+    result = re.sub(r'ÂÂ', 'Â', result)
     
     return result
-
-def should_be_a_circumflex(word_part):
-    """
-    Determină dacă A din mijlocul cuvântului ar trebui să fie Â
-    Reguli simpliste - se poate îmbunătăți
-    """
-    # Lista de cuvinte care au Â în mijloc
-    words_with_circumflex = ['ROMAN', 'SANT', 'VANT', 'CANT', 'PLANT']
-    return any(w in word_part for w in words_with_circumflex)
 
 def repair_json_diacritics(input_file, output_file):
     """
@@ -108,6 +129,8 @@ def repair_json_diacritics(input_file, output_file):
             print(f"🔄 Procesare set {set_id}: {len(words)} cuvinte")
             
             repaired_words = []
+            examples_shown = 0
+            
             for word in words:
                 original = word
                 transformed = add_romanian_diacritics(word)
@@ -116,12 +139,14 @@ def repair_json_diacritics(input_file, output_file):
                 total_words += 1
                 if original != transformed:
                     transformed_words += 1
-                    if len(repaired_words) <= 10:  # Afișează primele 10 exemple
+                    if examples_shown < 10:  # Afișează primele 10 exemple per set
                         print(f"  🔄 {original} → {transformed}")
+                        examples_shown += 1
             
             repaired_data[set_id] = repaired_words
+            print(f"  ✅ Set {set_id}: {len([w for w in repaired_words if w != words[repaired_words.index(w)] if w in repaired_words])} transformări")
         
-        print(f"\n📊 STATISTICI:")
+        print(f"\n📊 STATISTICI FINALE:")
         print(f"  • Total cuvinte procesate: {total_words}")
         print(f"  • Cuvinte transformate: {transformed_words}")
         print(f"  • Procent cu diacritice: {(transformed_words/total_words)*100:.1f}%")
@@ -150,7 +175,7 @@ def main():
     """
     Funcția principală
     """
-    print("🏺 REPARATOR DIACRITICE ROMÂNEȘTI")
+    print("🏺 REPARATOR DIACRITICE ROMÂNEȘTI v2.0")
     print("=" * 50)
     
     # Fișiere
@@ -173,7 +198,7 @@ def main():
     if success:
         print("\n🎉 SUCCES! Diacriticele au fost reparate!")
         print("🔥 Pentru a testa:")
-        print("   1. Înlocuiește fișierul vechi cu cel nou")
+        print("   1. mv public/ulcior_words_by_set_with_diacritics_repaired.json public/ulcior_words_by_set_with_diacritics.json")
         print("   2. Refresh aplicația")
         print("   3. Scrie 'ARTA' și vezi 'ARTĂ'!")
     else:
