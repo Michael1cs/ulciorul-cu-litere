@@ -33,15 +33,85 @@ const UlciorulCuLitere = () => {
   const [showStats, setShowStats] = useState<boolean>(false);
   const [diacriticsOn, setDiacriticsOn] = useState<boolean>(true);
   const [wordDictionary, setWordDictionary] = useState<{ [key: number]: string[] }>({});
+  const [totalPangrams, setTotalPangrams] = useState<number>(0);
 
   const getCurrentDate = (): string => new Date().toISOString().split('T')[0];
 
-  // Inițializare seturi de litere - sincronizate cu JSON
+  // ✅ PWA Service Worker Registration
+  useEffect(() => {
+    // Register Service Worker pentru PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('✅ SW registered: ', registration);
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('🔄 New content available, reload to update');
+                    // Optionally show update notification
+                    setMessage('📱 Versiune nouă disponibilă! Reîncărcați pagina.');
+                    setTimeout(() => setMessage(''), 5000);
+                  }
+                });
+              }
+            });
+          })
+          .catch((registrationError) => {
+            console.log('❌ SW registration failed: ', registrationError);
+          });
+      });
+    }
+
+    // Optimize pentru mobile
+    const viewport = document.querySelector('meta[name=viewport]');
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+    }
+
+    // Prevent default touch behaviors pe mobile
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault(); // Prevent pinch zoom
+      }
+    }, { passive: false });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+      const now = new Date().getTime();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault(); // Prevent double-tap zoom
+      }
+      lastTouchEnd = now;
+    }, false);
+
+  }, []);
+
+  // Calculează pangrame când se schimbă setul sau dicționarul
+  useEffect(() => {
+    if (currentSet && wordDictionary[currentSet.id]) {
+      const pangramCount = wordDictionary[currentSet.id].filter(word => isPangram(word)).length;
+      setTotalPangrams(pangramCount);
+      console.log(`📊 Set ${currentSet.id}: ${pangramCount} pangrame din ${wordDictionary[currentSet.id].length} cuvinte`);
+    } else {
+      setTotalPangrams(0);
+    }
+  }, [currentSet, wordDictionary]);
+
+  // Inițializare seturi de litere - 10 seturi complete
   useEffect(() => {
     const sets: LetterSet[] = [
       { letters: ['A', 'R', 'E', 'S', 'T', 'I', 'N'], center: 'A', id: 1 },
+      { letters: ['O', 'R', 'D', 'I', 'N', 'E', 'A'], center: 'O', id: 2 },
+      { letters: ['A', 'M', 'S', 'R', 'E', 'T', 'I'], center: 'A', id: 3 },
       { letters: ['E', 'L', 'U', 'M', 'A', 'R', 'I'], center: 'E', id: 4 },
       { letters: ['I', 'N', 'F', 'O', 'R', 'M', 'A'], center: 'I', id: 5 },
+      { letters: ['U', 'N', 'D', 'E', 'V', 'A', 'R'], center: 'U', id: 6 },
+      { letters: ['O', 'P', 'T', 'I', 'U', 'N', 'E'], center: 'O', id: 7 },
       { letters: ['A', 'B', 'S', 'O', 'L', 'U', 'T'], center: 'A', id: 8 },
       { letters: ['E', 'X', 'P', 'L', 'I', 'C', 'A'], center: 'E', id: 9 },
       { letters: ['I', 'M', 'P', 'O', 'R', 'T', 'A'], center: 'I', id: 10 }
@@ -85,8 +155,12 @@ const UlciorulCuLitere = () => {
           // Fallback cu dicționar basic dacă JSON-ul nu există
           const fallbackDictionary = {
             1: ['ARTA', 'ARTEI', 'ARTE', 'AREA', 'RATA', 'SARE', 'STARE', 'TARE', 'REAL', 'STRAIN'],
+            2: ['ORDIN', 'RODA', 'NORD', 'RADIO', 'NORI', 'NORA', 'RODIE', 'ARDEI'],
+            3: ['MARS', 'MASA', 'MARE', 'RAMA', 'ARMA', 'TRAM', 'MASTER', 'MARTE'],
             4: ['LUME', 'LUMEA', 'LUMEI', 'MARE', 'REAL', 'EMAIL', 'ARME'],
             5: ['INFO', 'FIRMA', 'FORMA', 'NORMA', 'MINOR'],
+            6: ['UNDE', 'DUNE', 'RUDE', 'VARU', 'NUDE'],
+            7: ['OPTIU', 'UNITE', 'NOTER', 'POINT', 'TUNET'],
             8: ['ABSOLUT', 'ATLAS', 'TABLA', 'BATAL', 'LOSTU'],
             9: ['EXPLICA', 'PACE', 'PLACE', 'ALEX'],
             10: ['IMPORT', 'PRIMA', 'TROMP', 'OPRIT']
@@ -100,8 +174,12 @@ const UlciorulCuLitere = () => {
         // Fallback cu dicționar basic în caz de eroare
         const fallbackDictionary = {
           1: ['ARTA', 'ARTEI', 'ARTE', 'AREA', 'RATA', 'SARE', 'STARE', 'TARE', 'REAL', 'STRAIN'],
+          2: ['ORDIN', 'RODA', 'NORD', 'RADIO', 'NORI', 'NORA', 'RODIE', 'ARDEI'],
+          3: ['MARS', 'MASA', 'MARE', 'RAMA', 'ARMA', 'TRAM', 'MASTER', 'MARTE'],
           4: ['LUME', 'LUMEA', 'LUMEI', 'MARE', 'REAL', 'EMAIL', 'ARME'],
           5: ['INFO', 'FIRMA', 'FORMA', 'NORMA', 'MINOR'],
+          6: ['UNDE', 'DUNE', 'RUDE', 'VARU', 'NUDE'],
+          7: ['OPTIU', 'UNITE', 'NOTER', 'POINT', 'TUNET'],
           8: ['ABSOLUT', 'ATLAS', 'TABLA', 'BATAL', 'LOSTU'],
           9: ['EXPLICA', 'PACE', 'PLACE', 'ALEX'],
           10: ['IMPORT', 'PRIMA', 'TROMP', 'OPRIT']
@@ -170,10 +248,6 @@ const UlciorulCuLitere = () => {
     setCurrentWord(prev => prev.slice(0, -1));
   };
 
-  const clearWord = (): void => {
-    setCurrentWord('');
-  };
-
   const submitWord = (): void => {
     if (!currentSet) return;
     const word = currentWord.trim();
@@ -187,15 +261,11 @@ const UlciorulCuLitere = () => {
     } else if (foundWords.some(w => comparator(w) === comparator(word))) {
       setMessage('Ai găsit deja acest cuvânt!');
     } else {
-      // Verifică dacă poate forma cuvântul cu literele disponibile
+      // Verifică dacă poate forma cuvântul cu literele disponibile (folosire infinită)
       const wordLetters = comparator(word.toUpperCase()).split('');
       const availableLetters = currentSet.letters.map(l => comparator(l.toUpperCase()));
       
-      const canForm = wordLetters.every(letter => {
-        const needed = wordLetters.filter(l => l === letter).length;
-        const available = availableLetters.filter(l => l === letter).length;
-        return needed <= available;
-      });
+      const canForm = wordLetters.every(letter => availableLetters.includes(letter));
 
       if (!canForm) {
         setMessage('Folosești litere care nu sunt disponibile!');
@@ -236,15 +306,12 @@ const UlciorulCuLitere = () => {
       submitWord();
     } else if (e.key === 'Backspace') {
       deleteLastLetter();
-    } else if (e.key === 'Escape') {
-      clearWord();
     }
   };
 
   const todayScore = dailyStats[getCurrentDate()] || 0;
   const totalDays = Object.keys(dailyStats).length;
   const totalWords = currentSet ? (wordDictionary[currentSet.id]?.length || 0) : 0;
-  const totalPangrams = currentSet ? (wordDictionary[currentSet.id]?.filter(word => isPangram(word)).length || 0) : 0;
 
   // Loading state - se afișează doar când letterSets nu s-au încărcat încă
   if (letterSets.length === 0) {
@@ -283,16 +350,31 @@ const UlciorulCuLitere = () => {
                 <Trophy className="w-4 h-4 text-yellow-500" />
                 <span className="font-bold">Punctaj: {score}</span>
               </div>
-              <div>Set: {currentSet?.id || 1}/6</div>
+              <div>Set: {currentSet?.id || 1}/10</div>
               <div>Cuvinte: {foundWords.length}/{totalWords}</div>
             </div>
 
-            {/* Pangrame și progres */}
-            {pangrams.length > 0 && (
-              <div className="text-sm text-amber-600 mb-2">
-                <span className="font-bold">🎯 Pangrame: {pangrams.length}/{totalPangrams}</span>
+            {/* Bara de progres pentru cuvinte */}
+            <div className="mb-4">
+              <div className="bg-gray-200 rounded-full h-2 max-w-xs mx-auto">
+                <div 
+                  className="bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400 h-2 rounded-full transition-all duration-500 ease-in-out"
+                  style={{ 
+                    width: totalWords > 0 ? `${Math.min((foundWords.length / totalWords) * 100, 100)}%` : '0%' 
+                  }}
+                ></div>
               </div>
-            )}
+              <div className="text-xs text-gray-500 mt-1 text-center">
+                {foundWords.length > 0 && totalWords > 0 && 
+                  `${Math.round((foundWords.length / totalWords) * 100)}% din cuvinte găsite`
+                }
+              </div>
+            </div>
+
+            {/* Pangrame și progres */}
+            <div className="text-sm text-amber-600 mb-2">
+              <span className="font-bold">🎯 Pangrame: {pangrams.length}/{totalPangrams}</span>
+            </div>
 
             {/* Statistici și setări */}
             <div className="flex justify-center items-center gap-4 text-xs text-gray-500">
@@ -392,12 +474,6 @@ const UlciorulCuLitere = () => {
               className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
             >
               Șterge
-            </button>
-            <button 
-              onClick={clearWord} 
-              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-            >
-              Curăță
             </button>
             <button 
               onClick={submitWord} 
