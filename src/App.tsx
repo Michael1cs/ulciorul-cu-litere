@@ -65,7 +65,7 @@ export default function UlciorulCuLitere() {
   }, []);
 
   // Salvează statisticile în localStorage
-  const saveStats = (newScore, foundWordsCount, pangrams) => {
+  const saveStats = (newScore: number, foundWordsCount: number, pangrams: number) => {
     const today = new Date().toISOString().split('T')[0];
     
     try {
