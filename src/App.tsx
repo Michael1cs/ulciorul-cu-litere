@@ -39,7 +39,7 @@ const UlciorulCuLitere: React.FC = () => {
       try {
         console.log('Încărcare fișiere JSON...');
         
-        // Încarcă fișierul cu diacritice
+        // Încarcă fișierul cu diacritice (reparat)
         const responseWithDiacritics = await fetch('/ulcior_words_by_set_with_diacritics.json');
         if (!responseWithDiacritics.ok) {
           throw new Error(`HTTP error! status: ${responseWithDiacritics.status}`);
@@ -47,8 +47,8 @@ const UlciorulCuLitere: React.FC = () => {
         const dataWithDiacritics = await responseWithDiacritics.json();
         console.log('Fișier cu diacritice încărcat:', Object.keys(dataWithDiacritics));
         setWordsWithDiacritics(dataWithDiacritics);
-
-        // Încarcă fișierul fără diacritice
+        
+        // Încarcă și fișierul fără diacritice pentru backup
         const responseWithoutDiacritics = await fetch('/ulcior_words_by_set.json');
         if (!responseWithoutDiacritics.ok) {
           throw new Error(`HTTP error! status: ${responseWithoutDiacritics.status}`);
@@ -56,9 +56,10 @@ const UlciorulCuLitere: React.FC = () => {
         const dataWithoutDiacritics = await responseWithoutDiacritics.json();
         console.log('Fișier fără diacritice încărcat:', Object.keys(dataWithoutDiacritics));
         setWordsWithoutDiacritics(dataWithoutDiacritics);
+        
+        console.log('Ambele dicționare încărcate cu succes!');
 
         setIsLoading(false);
-        console.log('Toate fișierele JSON încărcate cu succes!');
       } catch (error) {
         console.error('Eroare la încărcarea fișierelor JSON:', error);
         setMessage('Eroare la încărcarea dicționarului de cuvinte.');
@@ -80,6 +81,84 @@ const UlciorulCuLitere: React.FC = () => {
     shuffleLetters();
   }, [currentSet, shuffleLetters]);
 
+  // Funcție pentru a adăuga diacritice automat la cuvintele românești
+  const addDiacritics = (word: string): string => {
+    if (!withDiacritics) return word; // Dacă nu vrem diacritice, returnează originalul
+    
+    let result = word;
+    
+    // Transformări pentru cuvinte comune românești
+    result = result.replace(/\bARTA\b/g, 'ARTĂ');
+    result = result.replace(/\bARTE\b/g, 'ARTE');
+    result = result.replace(/\bARTEI\b/g, 'ARTEI');
+    result = result.replace(/\bARTISTA\b/g, 'ARTISTĂ');
+    result = result.replace(/\bARTISTE\b/g, 'ARTISTE');
+    result = result.replace(/\bARTISTI\b/g, 'ARTIȘTI');
+    
+    result = result.replace(/\bRATA\b/g, 'RAȚĂ');
+    result = result.replace(/\bRATE\b/g, 'RAȚE');
+    result = result.replace(/\bRATEI\b/g, 'RĂȚEI');
+    result = result.replace(/\bRATELOR\b/g, 'RĂȚELOR');
+    
+    result = result.replace(/\bTARI\b/g, 'ȚĂRI');
+    result = result.replace(/\bTARA\b/g, 'ȚARA');
+    result = result.replace(/\bTAREI\b/g, 'ȚĂREI');
+    result = result.replace(/\bTARILOR\b/g, 'ȚĂRILOR');
+    
+    result = result.replace(/\bSTANA\b/g, 'STÂNĂ');
+    result = result.replace(/\bSTANE\b/g, 'STÂNE');
+    result = result.replace(/\bSTANEI\b/g, 'STÂNEI');
+    result = result.replace(/\bSTANELOR\b/g, 'STÂNELOR');
+    
+    result = result.replace(/\bNATIUNE\b/g, 'NAȚIUNE');
+    result = result.replace(/\bNATIUNI\b/g, 'NAȚIUNI');
+    result = result.replace(/\bNATIUNEI\b/g, 'NAȚIUNEI');
+    result = result.replace(/\bNATIUNILOR\b/g, 'NAȚIUNILOR');
+    
+    result = result.replace(/\bINVATAT\b/g, 'ÎNVĂȚAT');
+    result = result.replace(/\bINVATATA\b/g, 'ÎNVĂȚATĂ');
+    result = result.replace(/\bINVATATE\b/g, 'ÎNVĂȚATE');
+    result = result.replace(/\bINVATATI\b/g, 'ÎNVĂȚAȚI');
+    
+    result = result.replace(/\bSTRAIN\b/g, 'STRĂIN');
+    result = result.replace(/\bSTRAINA\b/g, 'STRĂINĂ');
+    result = result.replace(/\bSTRAINI\b/g, 'STRĂINI');
+    result = result.replace(/\bSTRAINE\b/g, 'STRĂINE');
+    
+    result = result.replace(/\bANTENA\b/g, 'ANTENĂ');
+    result = result.replace(/\bANTENE\b/g, 'ANTENE');
+    result = result.replace(/\bANTENEI\b/g, 'ANTENEI');
+    result = result.replace(/\bANTENELOR\b/g, 'ANTENELOR');
+    
+    result = result.replace(/\bSARIT\b/g, 'SĂRIT');
+    result = result.replace(/\bSARITA\b/g, 'SĂRITĂ');
+    result = result.replace(/\bSARITE\b/g, 'SĂRITE');
+    result = result.replace(/\bSARITI\b/g, 'SĂRIȚI');
+    
+    result = result.replace(/\bFRUMOS\b/g, 'FRUMOS');
+    result = result.replace(/\bFRUMOASA\b/g, 'FRUMOASĂ');
+    result = result.replace(/\bFRUMOASE\b/g, 'FRUMOASE');
+    
+    result = result.replace(/\bTATA\b/g, 'TATĂ');
+    result = result.replace(/\bTATI\b/g, 'TAȚI');
+    result = result.replace(/\bTATAL\b/g, 'TATĂL');
+    result = result.replace(/\bTATILOR\b/g, 'TAȚILOR');
+    
+    // Transformări pentru sufixe comune
+    result = result.replace(/TIUNE\b/g, 'ȚIUNE');
+    result = result.replace(/TIUNI\b/g, 'ȚIUNI');
+    result = result.replace(/SIUNE\b/g, 'ȘIUNE');
+    result = result.replace(/SIUNI\b/g, 'ȘIUNI');
+    
+    // Transformări pentru participle și forme verbale
+    result = result.replace(/([A-Z]+)AT\b/g, (match, p1) => {
+      if (p1.endsWith('S') || p1.endsWith('T')) return p1 + 'AT';
+      return p1 + 'AT';
+    });
+    
+    return result;
+  };
+
   // Normalizează cuvântul pentru comparație (fără diacritice)
   const normalizeWord = (word: string): string => {
     const normalized = word
@@ -89,13 +168,12 @@ const UlciorulCuLitere: React.FC = () => {
       .replace(/[țţ]/gi, 't')
       .toUpperCase();
     
-    console.log(`Normalizare: "${word}" → "${normalized}"`);
     return normalized;
   };
 
   // Găsește cuvântul original din JSON bazat pe forma normalizată
   const findOriginalWord = (normalizedWord: string): string | null => {
-    const setId = currentSet.id.toString(); // Convertesc la string!
+    const setId = currentSet.id.toString();
     const currentWords = withDiacritics ? 
       wordsWithDiacritics[setId] || [] : 
       wordsWithoutDiacritics[setId] || [];
@@ -107,7 +185,7 @@ const UlciorulCuLitere: React.FC = () => {
       const normalizedJsonWord = normalizeWord(word);
       if (normalizedJsonWord === normalizedWord) {
         console.log(`Găsit match: "${normalizedWord}" → "${word}"`);
-        return word;
+        return word; // Returnează cuvântul din JSON (deja cu diacritice dacă e cazul)
       }
     }
 
@@ -179,6 +257,7 @@ const UlciorulCuLitere: React.FC = () => {
 
     // Adaugă cuvântul ORIGINAL din JSON în lista de cuvinte găsite
     console.log(`Cuvânt găsit - Input: "${word}", Din JSON: "${originalWord}"`);
+    
     setFoundWords(prev => [...prev, originalWord]);
     setScore(prev => prev + originalWord.length);
     setMessage(`Bravo! Ai găsit "${originalWord}"! (+${originalWord.length} puncte)`);
