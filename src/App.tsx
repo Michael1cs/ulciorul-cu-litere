@@ -30,14 +30,14 @@ export default function UlciorulCuLitere() {
   };
 
   const [currentSet, setCurrentSet] = useState(letterSets[0]);
-  const [foundWords, setFoundWords] = useState([]);
+  const [foundWords, setFoundWords] = useState<string[]>([]);
   const [currentWord, setCurrentWord] = useState('');
   const [message, setMessage] = useState('');
   const [score, setScore] = useState(0);
-  const [shuffledLetters, setShuffledLetters] = useState([]);
+  const [shuffledLetters, setShuffledLetters] = useState<string[]>([]);
   const [withDiacritics, setWithDiacritics] = useState(false);
   const [showStats, setShowStats] = useState(false);
-  const [dailyStats, setDailyStats] = useState({});
+  const [dailyStats, setDailyStats] = useState<Record<string, any>>({});
   const [generalStats, setGeneralStats] = useState({ totalGames: 0, totalScore: 0, streak: 0 });
 
   const shuffleLetters = useCallback(() => {
