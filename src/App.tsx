@@ -2,7 +2,26 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Shuffle, RotateCcw, Send, Trash2, Search, Trophy, BookOpen, Lightbulb, BarChart3, Calendar, X } from 'lucide-react';
 
 export default function UlciorulCuLitere() {
-  const letterSets = [
+  interface LetterSet {
+    letters: string[];
+    center: string;
+    id: number;
+  }
+
+  interface DailyStats {
+    score: number;
+    words: number;
+    pangrams: number;
+    gamesPlayed: number;
+  }
+
+  interface GeneralStats {
+    totalGames: number;
+    totalScore: number;
+    streak: number;
+  }
+
+  const letterSets: LetterSet[] = [
     { letters: ['A', 'S', 'T', 'R', 'I', 'N', 'E'], center: 'A', id: 1 },
     { letters: ['O', 'R', 'D', 'I', 'N', 'E', 'A'], center: 'O', id: 2 },
     { letters: ['A', 'M', 'S', 'R', 'E', 'T', 'I'], center: 'A', id: 3 },
@@ -29,16 +48,16 @@ export default function UlciorulCuLitere() {
     "10": ["AIOR", "AIORI", "AIRA", "AMARI", "AMATORI", "AMATORII", "AMIMIA", "AMIMII", "AMORTI", "APARI", "APARITOR", "APATIA", "APATII", "APATIT", "APOI", "APORIA", "APORII", "APORTORI", "APRIAT", "APRIORI", "IMPORT", "IMPORTA", "IMPORTAM", "IMPORTATI", "IMPORTAT", "PRIMI", "PRIMII", "OPRIT", "OPRITA", "PROMPT", "PRIMAR"]
   };
 
-  const [currentSet, setCurrentSet] = useState(letterSets[0]);
+  const [currentSet, setCurrentSet] = useState<LetterSet>(letterSets[0]);
   const [foundWords, setFoundWords] = useState<string[]>([]);
-  const [currentWord, setCurrentWord] = useState('');
-  const [message, setMessage] = useState('');
-  const [score, setScore] = useState(0);
+  const [currentWord, setCurrentWord] = useState<string>('');
+  const [message, setMessage] = useState<string>('');
+  const [score, setScore] = useState<number>(0);
   const [shuffledLetters, setShuffledLetters] = useState<string[]>([]);
-  const [withDiacritics, setWithDiacritics] = useState(false);
-  const [showStats, setShowStats] = useState(false);
-  const [dailyStats, setDailyStats] = useState<Record<string, any>>({});
-  const [generalStats, setGeneralStats] = useState({ totalGames: 0, totalScore: 0, streak: 0 });
+  const [withDiacritics, setWithDiacritics] = useState<boolean>(false);
+  const [showStats, setShowStats] = useState<boolean>(false);
+  const [dailyStats, setDailyStats] = useState<Record<string, DailyStats>>({});
+  const [generalStats, setGeneralStats] = useState<GeneralStats>({ totalGames: 0, totalScore: 0, streak: 0 });
 
   const shuffleLetters = useCallback(() => {
     const letters = currentSet.letters.filter(letter => letter !== currentSet.center);
