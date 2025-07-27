@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Shuffle, RotateCcw, Send, Trash2, Search, Trophy, BookOpen, Lightbulb } from 'lucide-react';
+import { Shuffle, RotateCcw, Send, Trash2, Search, Trophy, BookOpen, Lightbulb, BarChart3, Calendar, X } from 'lucide-react';
 
 export default function UlciorulCuLitere() {
   const letterSets = [
@@ -36,12 +36,88 @@ export default function UlciorulCuLitere() {
   const [score, setScore] = useState(0);
   const [shuffledLetters, setShuffledLetters] = useState([]);
   const [withDiacritics, setWithDiacritics] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [dailyStats, setDailyStats] = useState({});
+  const [generalStats, setGeneralStats] = useState({ totalGames: 0, totalScore: 0, streak: 0 });
 
   const shuffleLetters = useCallback(() => {
     const letters = currentSet.letters.filter(letter => letter !== currentSet.center);
     const shuffled = [...letters].sort(() => Math.random() - 0.5);
     setShuffledLetters(shuffled);
   }, [currentSet.letters, currentSet.center]);
+
+  // Încarcă statisticile din localStorage
+  useEffect(() => {
+    try {
+      const savedDailyStats = localStorage.getItem('ulciorul_daily_stats');
+      const savedGeneralStats = localStorage.getItem('ulciorul_general_stats');
+      
+      if (savedDailyStats) {
+        setDailyStats(JSON.parse(savedDailyStats));
+      }
+      
+      if (savedGeneralStats) {
+        setGeneralStats(JSON.parse(savedGeneralStats));
+      }
+    } catch (error) {
+      console.error('Eroare la încărcarea statisticilor:', error);
+    }
+  }, []);
+
+  // Salvează statisticile în localStorage
+  const saveStats = (newScore, foundWordsCount, pangrams) => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    try {
+      // Actualizează statisticile zilnice
+      const newDailyStats = {
+        ...dailyStats,
+        [today]: {
+          score: (dailyStats[today]?.score || 0) + newScore,
+          words: (dailyStats[today]?.words || 0) + foundWordsCount,
+          pangrams: (dailyStats[today]?.pangrams || 0) + pangrams,
+          gamesPlayed: (dailyStats[today]?.gamesPlayed || 0) + 1
+        }
+      };
+      
+      setDailyStats(newDailyStats);
+      localStorage.setItem('ulciorul_daily_stats', JSON.stringify(newDailyStats));
+      
+      // Actualizează statisticile generale
+      const newGeneralStats = {
+        totalGames: generalStats.totalGames + 1,
+        totalScore: generalStats.totalScore + newScore,
+        streak: calculateStreak(newDailyStats)
+      };
+      
+      setGeneralStats(newGeneralStats);
+      localStorage.setItem('ulciorul_general_stats', JSON.stringify(newGeneralStats));
+    } catch (error) {
+      console.error('Eroare la salvarea statisticilor:', error);
+    }
+  };
+
+  // Calculează seria de zile consecutive
+  const calculateStreak = (stats) => {
+    const dates = Object.keys(stats).sort().reverse();
+    let streak = 0;
+    const today = new Date().toISOString().split('T')[0];
+    
+    for (let i = 0; i < dates.length; i++) {
+      const date = dates[i];
+      const expectedDate = new Date();
+      expectedDate.setDate(expectedDate.getDate() - i);
+      const expectedDateStr = expectedDate.toISOString().split('T')[0];
+      
+      if (date === expectedDateStr && stats[date].gamesPlayed > 0) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
 
   useEffect(() => {
     shuffleLetters();
@@ -82,13 +158,19 @@ export default function UlciorulCuLitere() {
     
     if (word.length < 4) {
       setMessage('Cuvântul trebuie să aibă minim 4 litere!');
-      setTimeout(() => setMessage(''), 2000);
+      setTimeout(() => {
+        setMessage('');
+        setCurrentWord(''); // Auto-curăță
+      }, 2000);
       return;
     }
 
     if (!word.includes(currentSet.center)) {
       setMessage(`Cuvântul trebuie să conțină litera ${currentSet.center}!`);
-      setTimeout(() => setMessage(''), 2000);
+      setTimeout(() => {
+        setMessage('');
+        setCurrentWord(''); // Auto-curăță
+      }, 2000);
       return;
     }
 
@@ -102,7 +184,10 @@ export default function UlciorulCuLitere() {
     
     if (!canFormWord) {
       setMessage('Folosești litere care nu sunt disponibile!');
-      setTimeout(() => setMessage(''), 2000);
+      setTimeout(() => {
+        setMessage('');
+        setCurrentWord(''); // Auto-curăță
+      }, 2000);
       return;
     }
 
@@ -111,22 +196,50 @@ export default function UlciorulCuLitere() {
       
       if (foundWords.includes(displayWord)) {
         setMessage('Ai găsit deja acest cuvânt!');
-        setTimeout(() => setMessage(''), 2000);
+        setTimeout(() => {
+          setMessage('');
+          setCurrentWord(''); // Auto-curăță
+        }, 2000);
         return;
       }
 
+      // Verifică dacă este pangram
+      const wordLetters = new Set(word.split(''));
+      const isPangram = currentSet.letters.every(letter => wordLetters.has(letter));
+      
+      let points = displayWord.length;
+      let bonusMessage = '';
+      
+      if (isPangram) {
+        points += 10; // Bonus +10 pentru pangram
+        bonusMessage = ' 🎯 PANGRAM! +10 bonus!';
+      }
+
       setFoundWords(prev => [...prev, displayWord]);
-      setScore(prev => prev + displayWord.length);
-      setMessage(`Bravo! Ai găsit "${displayWord}"! (+${displayWord.length} puncte)`);
+      setScore(prev => prev + points);
+      setMessage(`Bravo! Ai găsit "${displayWord}"! (+${points} puncte)${bonusMessage}`);
       setCurrentWord('');
-      setTimeout(() => setMessage(''), 3000);
+      setTimeout(() => setMessage(''), 4000);
     } else {
       setMessage(`"${word}" nu este în dicționarul nostru.`);
-      setTimeout(() => setMessage(''), 2000);
+      setTimeout(() => {
+        setMessage('');
+        setCurrentWord(''); // Auto-curăță cuvintele greșite
+      }, 2000);
     }
   };
 
   const newGame = () => {
+    // Salvează statisticile jocului curent înainte de a începe unul nou
+    if (foundWords.length > 0) {
+      const currentPangrams = foundWords.filter(word => {
+        const wordLetters = new Set(word.replace(/[ĂÂ]/g, 'A').replace(/[ÎÍ]/g, 'I').replace(/[ȘŞ]/g, 'S').replace(/[ȚŢ]/g, 'T').split(''));
+        return currentSet.letters.every(letter => wordLetters.has(letter));
+      }).length;
+      
+      saveStats(score, foundWords.length, currentPangrams);
+    }
+    
     const randomSet = letterSets[Math.floor(Math.random() * letterSets.length)];
     setCurrentSet(randomSet);
     setFoundWords([]);
@@ -136,6 +249,16 @@ export default function UlciorulCuLitere() {
   };
 
   const switchSet = (direction) => {
+    // Salvează statisticile înainte de a schimba setul
+    if (foundWords.length > 0) {
+      const currentPangrams = foundWords.filter(word => {
+        const wordLetters = new Set(word.replace(/[ĂÂ]/g, 'A').replace(/[ÎÍ]/g, 'I').replace(/[ȘŞ]/g, 'S').replace(/[ȚŢ]/g, 'T').split(''));
+        return currentSet.letters.every(letter => wordLetters.has(letter));
+      }).length;
+      
+      saveStats(score, foundWords.length, currentPangrams);
+    }
+    
     const currentIndex = letterSets.findIndex(set => set.id === currentSet.id);
     let newIndex;
     
@@ -173,6 +296,133 @@ export default function UlciorulCuLitere() {
     const wordLetters = new Set(word.split(''));
     return currentSet.letters.every(letter => wordLetters.has(letter));
   }).length || 0;
+
+  // Formatează statisticile pentru afișare
+  const getStatsData = () => {
+    const sortedDates = Object.keys(dailyStats).sort().reverse();
+    const last7Days = sortedDates.slice(0, 7);
+    
+    return {
+      today: dailyStats[new Date().toISOString().split('T')[0]] || { score: 0, words: 0, pangrams: 0, gamesPlayed: 0 },
+      last7Days: last7Days.map(date => ({
+        date,
+        ...dailyStats[date],
+        formattedDate: new Date(date).toLocaleDateString('ro-RO', { 
+          weekday: 'short', 
+          month: 'short', 
+          day: 'numeric' 
+        })
+      })),
+      totalDays: Object.keys(dailyStats).length,
+      averageScore: generalStats.totalGames > 0 ? Math.round(generalStats.totalScore / generalStats.totalGames) : 0
+    };
+  };
+
+  // Componentă pentru modalul de statistici
+  const StatsModal = () => {
+    if (!showStats) return null;
+    
+    const stats = getStatsData();
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <BarChart3 className="w-6 h-6 text-blue-600" />
+                Statistici
+              </h2>
+              <button 
+                onClick={() => setShowStats(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Statistici de astăzi */}
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-blue-600" />
+                Astăzi
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{stats.today.score}</div>
+                  <div className="text-sm text-gray-600">Puncte</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{stats.today.words}</div>
+                  <div className="text-sm text-gray-600">Cuvinte</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">{stats.today.pangrams}</div>
+                  <div className="text-sm text-gray-600">Pangrame</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">{stats.today.gamesPlayed}</div>
+                  <div className="text-sm text-gray-600">Jocuri</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Statistici generale */}
+            <div className="mb-6 p-4 bg-yellow-50 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">Statistici generale</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-xl font-bold text-yellow-600">{generalStats.totalGames}</div>
+                  <div className="text-sm text-gray-600">Total jocuri</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-red-600">{generalStats.streak}</div>
+                  <div className="text-sm text-gray-600">Zile consecutive</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-green-600">{generalStats.totalScore}</div>
+                  <div className="text-sm text-gray-600">Total puncte</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-blue-600">{stats.averageScore}</div>
+                  <div className="text-sm text-gray-600">Medie/joc</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Istoric ultima săptămână */}
+            {stats.last7Days.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Ultima săptămână</h3>
+                <div className="space-y-2">
+                  {stats.last7Days.map((day, index) => (
+                    <div key={day.date} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm font-medium text-gray-700">{day.formattedDate}</div>
+                        {index === 0 && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Astăzi</span>}
+                      </div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="text-blue-600 font-medium">{day.score}p</span>
+                        <span className="text-green-600">{day.words}c</span>
+                        <span className="text-orange-600">{day.pangrams}🎯</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {stats.totalDays === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Începe să joci pentru a vedea statisticile!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-yellow-50 to-blue-50 p-6">
@@ -358,6 +608,13 @@ export default function UlciorulCuLitere() {
               Joc Nou
             </button>
             <button
+              onClick={() => setShowStats(true)}
+              className="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Statistici
+            </button>
+            <button
               onClick={() => setMessage(foundWords.length > 0 ? `Ai găsit ${foundWords.length} din ${totalWords} cuvinte! Continuă să cauți! 🔍` : 'Încearcă să formezi cuvinte cu literele din ulcior! 🏺')}
               className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
             >
@@ -375,19 +632,23 @@ export default function UlciorulCuLitere() {
               <li>• Litera aurită (centrală) trebuie să apară în toate cuvintele</li>
               <li>• Cuvintele trebuie să aibă minim 4 litere</li>
               <li>• Poți folosi aceleași litere de mai multe ori</li>
-              <li>• 🎯 Pangramele folosesc toate literele și dau bonus!</li>
+              <li>• 🎯 Pangramele folosesc toate literele și dau <strong>+10 bonus puncte!</strong></li>
               <li>• ✨ Toggle diacriticele pentru versiunea românească completă</li>
               <li>• 🏆 Explorează toate cele 10 seturi cu litere diferite</li>
+              <li>• 📊 Urmărește progresul în statistici zilnice și săptămânale</li>
               <li>• Găsește toate cuvintele pentru a umple ulciorul! 🌻</li>
             </ul>
             
             <div className="mt-3 p-2 bg-yellow-100 rounded text-xs text-yellow-800">
-              💡 <strong>Sfat:</strong> Încearcă cuvinte ca ARTA → ARTĂ, RATA → RAȚĂ cu diacriticele activate!
+              💡 <strong>Sfat:</strong> Cuvintele greșite se șterg automat! Pangramele primesc +10 bonus puncte!
             </div>
           </div>
 
         </div>
       </div>
+
+      {/* Modal pentru statistici */}
+      <StatsModal />
     </div>
   );
 }
