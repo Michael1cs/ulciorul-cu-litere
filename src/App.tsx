@@ -153,7 +153,11 @@ export default function UlciorulCuLitere() {
       .replace(/\bTARA\b/g, 'ȚARĂ')
       .replace(/\bSTANA\b/g, 'STÂNĂ')
       .replace(/\bNATIUNE\b/g, 'NAȚIUNE')
-      .replace(/\bTATA\b/g, 'TATĂ');
+      .replace(/\bTATA\b/g, 'TATĂ')
+      .replace(/\bMARIT\b/g, 'MĂRIT')
+      .replace(/\bMATURA\b/g, 'MĂTURĂ')
+      .replace(/\bRAREA\b/g, 'RĂREA')
+      .replace(/\bAMARI\b/g, 'AMĂRI');
   };
 
   const handleLetterClick = (letter: string): void => {
@@ -423,19 +427,19 @@ export default function UlciorulCuLitere() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-yellow-50 to-blue-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-yellow-50 to-blue-50 p-3 sm:p-6">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-yellow-200">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8 border-2 border-yellow-200">
           
           <div className="flex justify-center mb-4">
             <div className="text-2xl">🌻 🏺 🌻</div>
           </div>
 
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">🏺 Ulciorul cu Litere</h1>
-            <p className="text-sm text-gray-600 mb-4 italic">Jocul tradițional românesc de cuvinte</p>
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">🏺 Ulciorul cu Litere</h1>
+            <p className="text-xs sm:text-sm text-gray-600 mb-4 italic">Jocul tradițional românesc de cuvinte</p>
             
-            <div className="flex justify-center items-center gap-4 text-sm text-gray-600 mb-4">
+            <div className="flex justify-center items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-4">
               <button onClick={() => switchSet('prev')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">◀</button>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-1">
@@ -465,34 +469,34 @@ export default function UlciorulCuLitere() {
             </div>
             <div className="text-xs text-gray-500">{progress.toFixed(1)}% din cuvinte găsite</div>
 
-            <div className="grid grid-cols-3 gap-4 mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-4 p-2 sm:p-3 bg-gray-50 rounded-lg">
               <div className="text-center">
-                <div className="text-lg font-bold text-blue-600">{score}</div>
+                <div className="text-base sm:text-lg font-bold text-blue-600">{score}</div>
                 <div className="text-xs text-gray-600">Puncte</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-green-600">{foundWords.length}</div>
+                <div className="text-base sm:text-lg font-bold text-green-600">{foundWords.length}</div>
                 <div className="text-xs text-gray-600">Găsite</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-orange-600">{pangrams.length}</div>
+                <div className="text-base sm:text-lg font-bold text-orange-600">{pangrams.length}</div>
                 <div className="text-xs text-gray-600">Pangrame</div>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-center mb-12">
-            <div className="relative w-40 h-40">
+          <div className="flex justify-center mb-8 sm:mb-12">
+            <div className="relative w-32 sm:w-40 h-32 sm:h-40">
               <button
                 onClick={() => handleLetterClick(currentSet.center)}
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-yellow-400 hover:bg-yellow-500 rounded-lg text-2xl font-bold text-gray-800 transition-all duration-200 shadow-lg z-10 hover:scale-105"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 sm:w-16 h-12 sm:h-16 bg-yellow-400 hover:bg-yellow-500 rounded-lg text-xl sm:text-2xl font-bold text-gray-800 transition-all duration-200 shadow-lg z-10 hover:scale-105"
               >
                 {currentSet.center}
               </button>
               
               {shuffledLetters.map((letter: string, index: number) => {
                 const angle = (index * 60) * (Math.PI / 180);
-                const radius = 70;
+                const radius = 56; // Reduced from 70 for mobile
                 const x = Math.cos(angle) * radius;
                 const y = Math.sin(angle) * radius;
                 
@@ -500,10 +504,10 @@ export default function UlciorulCuLitere() {
                   <button
                     key={index}
                     onClick={() => handleLetterClick(letter)}
-                    className="absolute w-14 h-14 bg-gray-200 hover:bg-gray-300 rounded-lg text-xl font-bold text-gray-800 transition-all duration-200 shadow-md hover:scale-105"
+                    className="absolute w-10 sm:w-14 h-10 sm:h-14 bg-gray-200 hover:bg-gray-300 rounded-lg text-lg sm:text-xl font-bold text-gray-800 transition-all duration-200 shadow-md hover:scale-105"
                     style={{
-                      left: `calc(50% + ${x}px - 28px)`,
-                      top: `calc(50% + ${y}px - 28px)`
+                      left: `calc(50% + ${x}px - ${20}px)`, // Adjusted for smaller buttons
+                      top: `calc(50% + ${y}px - ${20}px)`
                     }}
                   >
                     {letter}
@@ -514,12 +518,12 @@ export default function UlciorulCuLitere() {
           </div>
 
           <div className="text-center mb-6">
-            <div className="bg-gray-100 rounded-lg p-4 mb-4">
+            <div className="bg-gray-100 rounded-lg p-3 sm:p-4 mb-4">
               <input
                 type="text"
                 value={currentWord}
                 onChange={(e) => setCurrentWord(e.target.value.toUpperCase())}
-                className="text-2xl font-mono text-center bg-transparent border-none outline-none w-full"
+                className="text-xl sm:text-2xl font-mono text-center bg-transparent border-none outline-none w-full"
                 placeholder="Scrie cuvântul aici..."
               />
             </div>
@@ -533,44 +537,44 @@ export default function UlciorulCuLitere() {
             )}
           </div>
 
-          <div className="flex justify-center gap-3 mb-8">
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8">
             <button
               onClick={deleteLastLetter}
-              className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
+              className="px-3 sm:px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm sm:text-base"
             >
               Șterge
             </button>
             <button
               onClick={clearWord}
-              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+              className="px-3 sm:px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-sm sm:text-base"
             >
               Curăță
             </button>
             <button
               onClick={submitWord}
-              className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+              className="px-4 sm:px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors text-sm sm:text-base"
             >
               Trimite
             </button>
             <button
               onClick={shuffleLetters}
-              className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
+              className="px-3 sm:px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
             >
               <Shuffle className="w-4 h-4" />
             </button>
           </div>
 
           {foundWords.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <BookOpen className="w-5 h-5" />
+            <div className="mb-4 sm:mb-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <BookOpen className="w-4 sm:w-5 h-4 sm:h-5" />
                 Cuvinte găsite ({foundWords.length}):
               </h3>
-              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+              <div className="flex flex-wrap gap-1 sm:gap-2 max-h-32 overflow-y-auto">
                 {foundWords.map((word: string, index: number) => (
                   <span
                     key={index}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
+                    className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${
                       pangrams.includes(word) 
                         ? 'bg-orange-100 text-orange-800 border border-orange-300' 
                         : 'bg-green-100 text-green-800'
@@ -584,35 +588,35 @@ export default function UlciorulCuLitere() {
             </div>
           )}
 
-          <div className="flex justify-center gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-6">
             <button
               onClick={newGame}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-sm sm:text-base"
             >
               <RotateCcw className="w-4 h-4" />
               Joc Nou
             </button>
             <button
               onClick={() => setShowStats(true)}
-              className="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-sm sm:text-base"
             >
               <BarChart3 className="w-4 h-4" />
               Statistici
             </button>
             <button
               onClick={() => setMessage(foundWords.length > 0 ? `Ai găsit ${foundWords.length} din ${totalWords} cuvinte! Continuă să cauți! 🔍` : 'Încearcă să formezi cuvinte cu literele din ulcior! 🏺')}
-              className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-sm sm:text-base"
             >
               <Lightbulb className="w-4 h-4" />
               Hint
             </button>
           </div>
 
-          <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-            <h4 className="font-semibold text-yellow-800 mb-2 flex items-center gap-2">
+          <div className="p-3 sm:p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+            <h4 className="font-semibold text-yellow-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
               🏺 Cum să joci Ulciorul cu Litere:
             </h4>
-            <ul className="text-sm text-yellow-700 space-y-1">
+            <ul className="text-xs sm:text-sm text-yellow-700 space-y-1">
               <li>• Formează cuvinte cu literele din ulcior</li>
               <li>• Litera aurită (centrală) trebuie să apară în toate cuvintele</li>
               <li>• Cuvintele trebuie să aibă minim 4 litere</li>
