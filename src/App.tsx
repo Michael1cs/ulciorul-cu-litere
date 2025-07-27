@@ -1,26 +1,41 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Shuffle, RotateCcw, Send, Trash2, Search, Trophy, BookOpen, Lightbulb, BarChart3, Calendar, X } from 'lucide-react';
 
-export default function UlciorulCuLitere() {
-  interface LetterSet {
-    letters: string[];
-    center: string;
-    id: number;
-  }
+// Tipuri TypeScript
+interface LetterSet {
+  letters: string[];
+  center: string;
+  id: number;
+}
 
-  interface DailyStats {
+interface DailyStats {
+  score: number;
+  words: number;
+  pangrams: number;
+  gamesPlayed: number;
+}
+
+interface GeneralStats {
+  totalGames: number;
+  totalScore: number;
+  streak: number;
+}
+
+interface StatsData {
+  today: DailyStats;
+  last7Days: Array<{
+    date: string;
     score: number;
     words: number;
     pangrams: number;
     gamesPlayed: number;
-  }
+    formattedDate: string;
+  }>;
+  totalDays: number;
+  averageScore: number;
+}
 
-  interface GeneralStats {
-    totalGames: number;
-    totalScore: number;
-    streak: number;
-  }
-
+export default function UlciorulCuLitere() {
   const letterSets: LetterSet[] = [
     { letters: ['A', 'S', 'T', 'R', 'I', 'N', 'E'], center: 'A', id: 1 },
     { letters: ['O', 'R', 'D', 'I', 'N', 'E', 'A'], center: 'O', id: 2 },
@@ -35,7 +50,7 @@ export default function UlciorulCuLitere() {
   ];
 
   // Dicționare complete din fișierul JSON
-  const wordsData = {
+  const wordsData: Record<string, string[]> = {
     "1": ["AERA", "AERARE", "AERAT", "AERATE", "AERE", "AERIAN", "AERIENE", "AERIENI", "AERISA", "AERISEA", "AERISI", "AERISIRE", "AERISIREA", "AERISIRI", "AERISIRII", "AERISIT", "AIASTA", "AIEST", "AIESTA", "AIESTE", "AIESTEA", "AIESTEI", "AIESTEIA", "AINTE", "AIRA", "AIST", "AISTA", "AISTE", "AISTEA", "AISTEI", "AISTEIA", "ANANAS", "ANARTRIA", "ANARTRIE", "ANARTRIEI", "ANARTRII", "ANASTASIS", "ANAT", "ANEI", "ANIE", "ANII", "ANIN", "ANINA", "ANINARE", "ANINAT", "ANINI", "ANISET", "ANISIAN", "ANISIENE", "ANISIENI", "ANSA", "ANSE", "ANSEI", "ANSER", "ANSERINA", "ANTANTE", "ANTE", "ANTENA", "ANTENAR", "ANTENARE", "ANTENARI", "ANTENAT", "ANTENATE", "ANTENE", "ANTENEI", "ANTENIST", "ANTERA", "ANTERE", "ANTEREI", "ANTERI", "ANTERIE", "ANTET", "ANTETE", "ANTETREN", "ANTI", "ANTIAERIAN", "ANTIAERIANE", "ANTIAERIENI", "ANTIARTE", "ANTIRASIST", "ANTIRASISTE", "ANTISER", "ANTIST", "ANTITEATRE", "ANTITRINI", "ANTITRINITAR", "ANTITRINITARE", "ANTITRINITARI", "ANTRE", "ANTREN", "ANTRENA", "ANTRENANT", "ANTRENANTE", "ANTRENARE", "ANTRENAREA", "ANTRENAT", "ANTRENATE", "ARTĂ", "ARTE", "ARTEI", "ARTA", "ASERT", "ASISTA", "ASTA", "ASTEA", "ASTEI", "ASTEIA", "ASTER", "ASTERI", "ASTERIA", "ASTERIAS", "ASTERIE", "ASTERIEI", "ASTERII", "ATARE", "ATRA", "ERAI", "ERATE", "ERRATA", "ESAR", "ESENTA", "ESTRAN", "ESTRAS", "ETAN", "ETANSA", "ETATE", "ETATIST", "ETATISTE", "ETERAT", "ETERATE", "ETERIA", "ETERNITATE", "ETERNITATEA", "ETIRA", "ETIRARE", "ETIRAT", "IAER", "IARIST", "IARNA", "IASI", "IASTA", "IASTE", "IASTEA", "IERNA", "IERNARE", "IERNAT", "IERTA", "IERTAI", "IERTARE", "IERTAREA", "IERTASE", "IERTAT", "IERTATE", "IESTA", "IESTEA", "IESTEIA", "INTRA", "INTRAI", "INTRARE", "INTRAREA", "INTRASE", "INTRASEE", "INTRAT", "INTRATA", "INTRATE", "IRAN", "IRANI", "IRANIAN", "IRANIENE", "IRANIENEI", "IRANIENI", "IRANIST", "IRANISTE", "IRASER", "IRAT", "IRINA", "IRITA", "IRITAI", "IRITANT", "IRITANTE", "IRITARE", "IRITAREA", "IRITAT", "IRITATE", "ISAIA", "ISATINEI", "ISATIS", "ISTA", "ISTEA", "ISTEIA", "ISTERIA", "ISTRIA", "ITATE", "ITINERANT", "ITINERANTE", "ITINERAR", "ITINERARE", "NAIE", "NAINTE", "NAISAN", "NAIST", "NAISTE", "NANA", "NANE", "NANEI", "NANI", "NARA", "NARARE", "NARATE", "NARE", "NARINE", "NARINEI", "NART", "NASTE", "NASTIA", "NASTIE", "NASTIEI", "NASTII", "NASTRE", "NATANS", "NATANT", "NATANTE", "NATRA", "NATRE", "NATREI", "NATRIT", "RAIA", "RAIE", "RAITA", "RAITE", "RANA", "RANITI", "RANT", "RANTAS", "RANTIA", "RANTIE", "RANTIEI", "RANTII", "RARA", "RARE", "RARI", "RARITATE", "RARITATEA", "RASA", "RASAT", "RASATE", "RASE", "RASEI", "RASINA", "RASIST", "RASISTE", "RAST", "RASTER", "RASTERE", "RASTIER", "RAȚĂ", "RATAI", "RATARE", "RATAREA", "RATAT", "RATATE", "RATA", "RAȚE", "RATEI", "RATIERE", "RATIEREI", "RATINA", "RATINARE", "RATINAT", "RATITE", "SAIA", "SAINETE", "SANA", "SANATATE", "SANIA", "SANIE", "SANIEI", "SANITAR", "SANITARE", "SANITARI", "SANITARIST", "SANTINA", "SANTINE", "SANTINEI", "SANTINIER", "SANTINIERI", "SARAI", "SARANTARI", "SARASIR", "SARE", "SAREA", "SARETA", "SARI", "SARII", "SARSAN", "SART", "SARTA", "SARTIA", "SASTISEA", "SASTISI", "SASTISIRE", "SASTISIRI", "SASTISIRII", "SASTISIT", "SATAN", "SATANA", "SATANAR", "SATANE", "SATANEI", "SATANIST", "SATANISTE", "SATARA", "SATE", "SATEN", "SATIN", "SATINA", "SATINARE", "SATINAREA", "SATINAT", "SATINET", "SATIR", "SATIRA", "SATIRE", "SATIREI", "SATIRI", "SATIRII", "SATIRIST", "SATRAR", "SEARA", "SENA", "SENAR", "SENARE", "SENARI", "SENARIE", "SENAT", "SENATE", "SENINAT", "SENTINTA", "SERAI", "SERASIR", "SERAT", "SERATA", "SERATE", "SERENITATE", "SERIA", "SERIAT", "SERTAR", "SERTARE", "SESIA", "SETA", "SETAREA", "SETARIA", "SETATE", "SETEA", "SIENA", "SIERRA", "SINAI", "SINAIA", "SINAIEI", "SINANTER", "SINANTERE", "SINANTERI", "SINEA", "SINIA", "SINISTRA", "SINISTRAT", "SINISTRATE", "SINISTRITATE", "SINTAN", "SIRENIA", "SIRENIAN", "SIRIA", "SIRIAN", "SISTA", "SISTARE", "SISTAREA", "SITA", "SITAR", "SITARI", "STAI", "STAN", "STÂNĂ", "STANAT", "STÂNE", "STÂNEI", "STANI", "STANINEI", "STAR", "STARE", "STAREA", "STARET", "STARI", "STARNI", "START", "STARTER", "STARTERE", "STARTERI", "STAS", "STAT", "STATE", "STATER", "STATERI", "STATES", "STATIST", "STEA", "STEAN", "STEARAT", "STEARINEI", "STEATIT", "STERNA", "STRA", "STRAI", "STRAIE", "STRANA", "STRANE", "STRANEI", "STRANIA", "STRANIE", "STRANIETATE", "STRANII", "STRAS", "STRASTE", "STRAT", "STRATE", "STRESA", "STRESANT", "STRESANTE", "STRESARE", "STRESAT", "STRIA", "STRIAT", "STRIATA", "STRIATE", "TAENIA", "TAIAT", "TAIE", "TAIER", "TAIERE", "TAIN", "TAINA", "TAINE", "TAINEI", "TANA", "TANANA", "TANANT", "TANANTE", "TANARE", "TANAT", "TANEA", "TANIN", "TANINI", "TANTANA", "TANTAR", "TANTI", "TANTRA", "TANTRIST", "TANTRISTE", "ȚARĂ", "TARAR", "TARARA", "TARARE", "TARAS", "TARAT", "TARATA", "TARATE", "TARE", "ȚĂREI", "ȚĂRI", "TARS", "TARSIAN", "TARSIEN", "TARSIENE", "TARSIENI", "TARSITEI", "TARTAN", "TARTANE", "TARTANEI", "TARTAR", "TARTARE", "TARTARI", "TARTARIN", "TARTARINI", "TARTE", "TARTEI", "TARTINE", "TARTINEI", "TARTRAT", "TARTRE", "TASA", "TASARE", "TASAREA", "TASAT", "TASE", "TASTA", "TASTAI", "TASTARE", "TASTAREA", "TASTAT", "TASTE", "TASTEN", "TASTER", "TASTERE", "TASTERIST", "TASTERISTE", "TASTIERA", "TASTIERE", "TASTIEREI", "TATĂ", "TATAIA", "TATAIE", "TATAIEI", "TATANA", "TATE", "TATEI", "TATI", "TATIN", "TEAS", "TEATR", "TEATRE", "TENIA", "TENTA", "TENTANT", "TENTANTE", "TENTAT", "TENTATEN", "TERA", "TERARII", "TERAS", "TERASA", "TERASARE", "TERASAT", "TERASATE", "TERASE", "TERASEI", "TERASETE", "TERASIER", "TERASIERI", "TERIAN", "TERNAR", "TERNARE", "TERNARI", "TERNAT", "TERNATE", "TERRA", "TESTA", "TESTARE", "TESTAREA", "TESTAT", "TESTATE", "TESTEA", "TETA", "TETANIA", "TETANIE", "TETANIEI", "TETANII", "TETEA", "TETRA", "TETRAS", "TETRASTES", "TETREA", "TIARA", "TIARE", "TIAREI", "TINA", "TINEA", "TINEREA", "TINTA", "TIRA", "TIRAN", "TIRANA", "TIRANE", "TIRANEI", "TIRANI", "TIRANIA", "TIRANIE", "TIRANIEI", "TIRANII", "TIRANISI", "TIRANNIA", "TIRANT", "TISA", "TISAR", "TITAN", "TITANI", "TITANII", "TITANIT", "TITIREA", "TITIRISEA", "TITRA", "TITRARE", "TITRAREA", "TITRAT", "TITRATE", "TRAI", "TRAIAN", "TRAINE", "TRAINEI", "TRAISTA", "TRAISTE", "TRAISTEI", "TRAN", "TRANSE", "TRANSEI", "TRANSNISTRIAN", "TRANSNISTRIENE", "TRANSNISTRIENI", "TRANTIE", "TRAS", "TRASA", "TRASAI", "TRASANT", "TRASANTE", "TRASARE", "TRASAREA", "TRASAT", "TRASATE", "TRASE", "TRASEE", "TRASNET", "TRASS", "TRATA", "TRATARE", "TRATAREA", "TRATARISEA", "TRATARISI", "TRATAT", "TRATATE", "TRATE", "TREIA", "TREIERA", "TREIERARE", "TREIERAT", "TRENA", "TRENANT", "TRENANTE", "TRENARE", "TRENAREA", "TRESAR", "TRESARE", "TRESARI", "TRESTIA", "TRIA", "TRIAS", "TRIAT", "TRIERA", "TRIEREA", "TRINITAR", "TRINITARE", "TRINITARI", "TRINITARIAN", "TRINITARIENE", "TRINITARIENEI", "TRINITARIENI", "TRINITATE", "TRINITATEA", "TRINITRAT", "TRISA"],
     "2": ["ADENOID", "ADENOIDE", "ADINEAORI", "ADINIOAREA", "ADIO", "ADOR", "ADORA", "ADORARE", "ADORAREA", "AERODINE", "AEROION", "AEROIONI", "AIOR", "AIORI", "ANDORRA", "ANDORRAN", "ANDORRANE", "ANDORRANI", "ANDORREI", "ANDROID", "ANEROID", "ANEROIDE", "ANION", "ANIONI", "ANIONII", "ANOD", "ANODIN", "ANODINE", "ANODINI", "ARAREORI", "ARDOARE", "ARDORII", "ARON", "ARONDA", "ARONDARE", "DANO", "DEDERON", "DEDOI", "DENDROID", "DENDROIDE", "DENDRON", "DERORDINE", "DINARION", "DINIOARE", "DINIOAREA", "DINODE", "DINODEI", "DIODA", "DIODE", "DIODEI", "DIONINEI", "DIORIA", "DIORIE", "DIORIEI", "DIORII", "DOAR", "DOARE", "DODE", "DODI", "DODII", "DOINA", "DOINAR", "DOINARI", "DOINE", "DOINEA", "DOINEI", "DOINI", "DOINIRE", "DOINIRI", "DOINIRII", "DONA", "DONARE", "DONOARE", "DONOR", "DONORI", "DORADA", "DORADE", "DORADEI", "DOREA", "DORI", "DORIAN", "DORIENE", "DORIENEI", "DORIENI", "DORIN", "DORIND", "DORN", "DORNE", "DORNEAN", "DORNEI", "DORNENE", "DORNENI", "DRENOARE", "DRENOR", "DRENORI", "DROAIA", "DROAIE", "DROAIEI", "ENEODE", "ENEODEI", "ENORIA", "ENORIE", "ENORIEI", "ENORII", "EONI", "EROARE", "EROAREA", "ERODA", "ERODARE", "ERODAREA", "ERODII", "ERODIII", "EROI", "EROII", "EROINE", "EROINEI", "ERORI", "ERORII", "IDEO", "IDONEE", "IDONEI", "INDARNO", "INDOIRANIAN", "INDOOR", "INION", "INIONI", "INODOR", "INODORA", "INODORE", "INODORI", "IOAN", "IOANA", "IOANE", "IOARE", "IODIDE", "IONI", "IONIA", "IONIAN", "IONIEI", "IONIENE", "IONIENEI", "IONIENI", "IONII", "IORDAN", "IORDANE", "IORDANIA", "IORDANIAN", "IORDANIEI", "IORDANIENE", "IORDANIENEI", "IORDANIENI", "IROD", "IRON", "IRONIA", "IRONIEI", "IRONII", "NEDORIND", "NEON", "NEORDINAR", "NEORDINE", "NEORDINII", "NERO", "NEROADE", "NEROADEI", "NEROD", "NERODIRE", "NERODOI", "NERONIAN", "NOADE", "NOADEI", "NODA", "NODE", "NOIAN", "NOIANE", "NOII", "NONA", "NONE", "NONEI", "NORA", "NORD", "NOREA", "NORI", "NORIA", "NORIAN", "NORIE", "NORIEI", "NORII", "NOROADE", "NOROAIE", "NOROD", "NOROI", "NOROIA", "OADE", "OAIA", "OAIE", "OANA", "OANE", "OARDE", "OARE", "OAREA", "OAREI", "ODAIA", "ODAIE", "ODEI", "ODEOANE", "ODEON", "ODIE", "ODINE", "ODINI", "ODOARE", "ODOR", "ODORA", "ODORARE", "OIDIE", "OIER", "OIERI", "OIERIA", "OIERIE", "OIERIEI", "OIERII", "OINA", "OINEI", "ONANIA", "ONANIE", "ONANIEI", "ONANII", "ONDINE", "ONDINEI", "ONDO", "ONERAR", "ONERARE", "ONERARI", "ONIRO", "ONOARE", "ONOAREA", "ONOAREI", "ONOR", "ONORA", "ONORAR", "ONORARE", "ONORAREA", "ONORARI", "ONORARII", "ORADEA", "ORAR", "ORARE", "ORARI", "ORDA", "ORDIA", "ORDIE", "ORDIEI", "ORDII", "ORDIN", "ORDINA", "ORDINAR", "ORDINARE", "ORDINARI", "ORDINE", "ORDINEA", "ORDINI", "ORDINII", "ORDON", "ORDONA", "ORDONARE", "ORDONAREA", "ORDONE", "OREA", "OREADE", "OREADEI", "OREI", "OREIOANE", "OREION", "ORENDA", "ORIA", "ORIE", "ORIEI", "ORIER", "ORIERI", "ORII", "ORION", "ORNA", "ORNARE", "ORNAREA", "ORNI", "OROARE", "OROAREA", "ORORI", "ORORII", "RADIO", "RADIORAID", "RADON", "RAIOANE", "RAION", "RAIONA", "RAIONARE", "RAREORI", "REDOARE", "REDONNER", "REDOR", "REDORI", "REDORII", "RENO", "REORDONA", "REORDONARE", "RERAREORI", "RINO", "RINOREE", "ROADE", "ROADERE", "ROADEREA", "ROADERI", "ROADERII", "RODA", "RODAN", "RODANE", "RODANI", "RODARE", "RODEA", "RODEO", "RODI", "RODIA", "RODIE", "RODIEI", "RODIER", "RODIERI", "RODII", "RODIII", "RODIN", "RODIND", "RODINE", "RODINI", "RODINII", "RODIOARE", "RODIOAREI", "RODIRE", "RODIRI", "RODIRII", "RODO", "RODOARE", "RODODENDRON", "RODODENDRONI", "RODOID", "RODOR", "ROIA", "ROIE", "ROII", "ROIRE", "ROIRI", "ROIRII", "ROND", "RONDA", "RONDARE", "RONDE", "RONDEA", "RONDEI", "RONDINE", "RONDINO", "RONDO", "RONEO", "RONIN", "RONRON", "RONRONA"],
     "3": ["AERA", "AERARE", "AERAT", "AERATE", "AERE", "AERISA", "AERISEA", "AERISI", "AERISIRE", "AERISIREA", "AERISIRI", "AERISIRII", "AERISIT", "AMAR", "AMARA", "AMARARE", "AMARAREA", "AMARE", "AMAREI", "AMARI", "AMASTIE", "AMER", "AMETIST", "AMETISTE", "AMIMIA", "AMIMIE", "AMIMIEI", "AMIMII", "ARAM", "ARAMA", "ARAMEI", "ARAR", "ARARE", "ARAT", "ARATA", "ARATAT", "ARATE", "AREA", "AREISM", "AREST", "ARESTA", "ARESTARE", "ARESTAREA", "ARESTAT", "ARESTATE", "ARET", "ARETA", "ARIA", "ARIE", "ARIEI", "ARIERAT", "ARIERATE", "ARIES", "ARIETE", "ARII", "ARIMA", "ARIMARE", "ARIMAREA", "ARISTAT", "ARISTATA", "ARISTATE", "ARISTE", "ARISTEI", "ARITM", "ARITMIA", "ARITMIE", "ARITMIEI", "ARITMII", "ARMA", "ARMAR", "ARMARE", "ARMAREA", "ARMAT", "ARMATA", "ARMATE", "ARMATEI", "ARME", "ARMEI", "ARMIA", "ARMIE", "ARMIEI", "ARMII", "ARSE", "ARSEI", "ARSIS", "ARTĂ", "ARTE", "ARTEI", "ARTEMIS", "ARTEMISIA", "ARTERA", "ARTERE", "ARTEREI", "ARTERITE", "ARTIST", "ARTISTE", "ARTISTISM", "ARTRITA", "ARTRITE", "ARTRITEI", "ARTRITISM", "MARS", "MARSE", "MARSULUI", "MASA", "MASE", "MASELOR", "MASEI", "MARE", "MARI", "MARII", "MARILOR", "MARIT", "MARITA", "MARITE", "MARITI", "MARIRE", "MARIREA", "MARIRI", "MARIRILOR", "RAME", "RAMA", "RAMEI", "RAMELOR", "ARME", "ARMA", "ARMEI", "ARMELOR", "ARMAT", "ARMATA", "ARMATE", "ARMATI", "TRAM", "TRAME", "TRAMEI", "TRAMELOR", "MASTER", "MASTERI", "MASTERULUI", "MARTE", "MARTEI", "MARTI", "MARTILOR", "RESTE", "RESTEI", "RESTI", "RESTELOR"],
@@ -54,73 +69,57 @@ export default function UlciorulCuLitere() {
   const [message, setMessage] = useState<string>('');
   const [score, setScore] = useState<number>(0);
   const [shuffledLetters, setShuffledLetters] = useState<string[]>([]);
-  const [withDiacritics, setWithDiacritics] = useState<boolean>(false);
+  const [withDiacritics, setWithDiacritics] = useState<boolean>(true);
   const [showStats, setShowStats] = useState<boolean>(false);
   const [dailyStats, setDailyStats] = useState<Record<string, DailyStats>>({});
   const [generalStats, setGeneralStats] = useState<GeneralStats>({ totalGames: 0, totalScore: 0, streak: 0 });
 
   const shuffleLetters = useCallback(() => {
-    const letters = currentSet.letters.filter(letter => letter !== currentSet.center);
+    const letters = currentSet.letters.filter((letter: string) => letter !== currentSet.center);
     const shuffled = [...letters].sort(() => Math.random() - 0.5);
     setShuffledLetters(shuffled);
   }, [currentSet.letters, currentSet.center]);
 
-  // Încarcă statisticile din localStorage
+  // Încarcă statisticile din memoria componentei (nu localStorage în artifacts)
   useEffect(() => {
-    try {
-      const savedDailyStats = localStorage.getItem('ulciorul_daily_stats');
-      const savedGeneralStats = localStorage.getItem('ulciorul_general_stats');
-      
-      if (savedDailyStats) {
-        setDailyStats(JSON.parse(savedDailyStats));
-      }
-      
-      if (savedGeneralStats) {
-        setGeneralStats(JSON.parse(savedGeneralStats));
-      }
-    } catch (error) {
-      console.error('Eroare la încărcarea statisticilor:', error);
-    }
+    // În artifacts, simulăm doar structura de date
+    const today = new Date().toISOString().split('T')[0];
+    setDailyStats({
+      [today]: { score: 0, words: 0, pangrams: 0, gamesPlayed: 0 }
+    });
   }, []);
 
-  // Salvează statisticile în localStorage
-  const saveStats = (newScore: number, foundWordsCount: number, pangrams: number) => {
+  // Salvează statisticile în memoria componentei
+  const saveStats = (newScore: number, foundWordsCount: number, pangrams: number): void => {
     const today = new Date().toISOString().split('T')[0];
     
-    try {
-      // Actualizează statisticile zilnice
-      const newDailyStats = {
-        ...dailyStats,
-        [today]: {
-          score: (dailyStats[today]?.score || 0) + newScore,
-          words: (dailyStats[today]?.words || 0) + foundWordsCount,
-          pangrams: (dailyStats[today]?.pangrams || 0) + pangrams,
-          gamesPlayed: (dailyStats[today]?.gamesPlayed || 0) + 1
-        }
-      };
-      
-      setDailyStats(newDailyStats);
-      localStorage.setItem('ulciorul_daily_stats', JSON.stringify(newDailyStats));
-      
-      // Actualizează statisticile generale
-      const newGeneralStats = {
-        totalGames: generalStats.totalGames + 1,
-        totalScore: generalStats.totalScore + newScore,
-        streak: calculateStreak(newDailyStats)
-      };
-      
-      setGeneralStats(newGeneralStats);
-      localStorage.setItem('ulciorul_general_stats', JSON.stringify(newGeneralStats));
-    } catch (error) {
-      console.error('Eroare la salvarea statisticilor:', error);
-    }
+    // Actualizează statisticile zilnice
+    const newDailyStats = {
+      ...dailyStats,
+      [today]: {
+        score: (dailyStats[today]?.score || 0) + newScore,
+        words: (dailyStats[today]?.words || 0) + foundWordsCount,
+        pangrams: (dailyStats[today]?.pangrams || 0) + pangrams,
+        gamesPlayed: (dailyStats[today]?.gamesPlayed || 0) + 1
+      }
+    };
+    
+    setDailyStats(newDailyStats);
+    
+    // Actualizează statisticile generale
+    const newGeneralStats = {
+      totalGames: generalStats.totalGames + 1,
+      totalScore: generalStats.totalScore + newScore,
+      streak: calculateStreak(newDailyStats)
+    };
+    
+    setGeneralStats(newGeneralStats);
   };
 
   // Calculează seria de zile consecutive
-  const calculateStreak = (stats) => {
+  const calculateStreak = (stats: Record<string, DailyStats>): number => {
     const dates = Object.keys(stats).sort().reverse();
     let streak = 0;
-    const today = new Date().toISOString().split('T')[0];
     
     for (let i = 0; i < dates.length; i++) {
       const date = dates[i];
@@ -142,7 +141,7 @@ export default function UlciorulCuLitere() {
     shuffleLetters();
   }, [currentSet, shuffleLetters]);
 
-  const addSimpleDiacritics = (word) => {
+  const addSimpleDiacritics = (word: string): string => {
     if (!withDiacritics) return word;
     
     return word
@@ -155,22 +154,22 @@ export default function UlciorulCuLitere() {
       .replace(/\bTATA\b/g, 'TATĂ');
   };
 
-  const handleLetterClick = (letter) => {
+  const handleLetterClick = (letter: string): void => {
     setCurrentWord(prev => prev + letter);
     setMessage('');
   };
 
-  const clearWord = () => {
+  const clearWord = (): void => {
     setCurrentWord('');
     setMessage('');
   };
 
-  const deleteLastLetter = () => {
+  const deleteLastLetter = (): void => {
     setCurrentWord(prev => prev.slice(0, -1));
     setMessage('');
   };
 
-  const submitWord = () => {
+  const submitWord = (): void => {
     const word = currentWord.toUpperCase();
     const setId = currentSet.id.toString();
     const availableWords = wordsData[setId] || [];
@@ -224,7 +223,7 @@ export default function UlciorulCuLitere() {
 
       // Verifică dacă este pangram
       const wordLetters = new Set(word.split(''));
-      const isPangram = currentSet.letters.every(letter => wordLetters.has(letter));
+      const isPangram = currentSet.letters.every((letter: string) => wordLetters.has(letter));
       
       let points = displayWord.length;
       let bonusMessage = '';
@@ -248,12 +247,12 @@ export default function UlciorulCuLitere() {
     }
   };
 
-  const newGame = () => {
+  const newGame = (): void => {
     // Salvează statisticile jocului curent înainte de a începe unul nou
     if (foundWords.length > 0) {
-      const currentPangrams = foundWords.filter(word => {
+      const currentPangrams = foundWords.filter((word: string) => {
         const wordLetters = new Set(word.replace(/[ĂÂ]/g, 'A').replace(/[ÎÍ]/g, 'I').replace(/[ȘŞ]/g, 'S').replace(/[ȚŢ]/g, 'T').split(''));
-        return currentSet.letters.every(letter => wordLetters.has(letter));
+        return currentSet.letters.every((letter: string) => wordLetters.has(letter));
       }).length;
       
       saveStats(score, foundWords.length, currentPangrams);
@@ -267,19 +266,19 @@ export default function UlciorulCuLitere() {
     setScore(0);
   };
 
-  const switchSet = (direction) => {
+  const switchSet = (direction: 'prev' | 'next'): void => {
     // Salvează statisticile înainte de a schimba setul
     if (foundWords.length > 0) {
-      const currentPangrams = foundWords.filter(word => {
+      const currentPangrams = foundWords.filter((word: string) => {
         const wordLetters = new Set(word.replace(/[ĂÂ]/g, 'A').replace(/[ÎÍ]/g, 'I').replace(/[ȘŞ]/g, 'S').replace(/[ȚŢ]/g, 'T').split(''));
-        return currentSet.letters.every(letter => wordLetters.has(letter));
+        return currentSet.letters.every((letter: string) => wordLetters.has(letter));
       }).length;
       
       saveStats(score, foundWords.length, currentPangrams);
     }
     
-    const currentIndex = letterSets.findIndex(set => set.id === currentSet.id);
-    let newIndex;
+    const currentIndex = letterSets.findIndex((set: LetterSet) => set.id === currentSet.id);
+    let newIndex: number;
     
     if (direction === 'prev') {
       newIndex = currentIndex > 0 ? currentIndex - 1 : letterSets.length - 1;
@@ -294,9 +293,9 @@ export default function UlciorulCuLitere() {
     setScore(0);
   };
 
-  const toggleDiacritics = () => {
+  const toggleDiacritics = (): void => {
     setWithDiacritics(prev => !prev);
-    setFoundWords(prev => prev.map(word => 
+    setFoundWords(prev => prev.map((word: string) => 
       withDiacritics ? 
         word.replace(/[ĂÂ]/g, 'A').replace(/[ÎÍ]/g, 'I').replace(/[ȘŞ]/g, 'S').replace(/[ȚŢ]/g, 'T') :
         addSimpleDiacritics(word)
@@ -306,24 +305,24 @@ export default function UlciorulCuLitere() {
   const totalWords = wordsData[currentSet.id.toString()]?.length || 0;
   const progress = totalWords > 0 ? (foundWords.length / totalWords) * 100 : 0;
   
-  const pangrams = foundWords.filter(word => {
+  const pangrams = foundWords.filter((word: string) => {
     const wordLetters = new Set(word.replace(/[ĂÂ]/g, 'A').replace(/[ÎÍ]/g, 'I').replace(/[ȘŞ]/g, 'S').replace(/[ȚŢ]/g, 'T').split(''));
-    return currentSet.letters.every(letter => wordLetters.has(letter));
+    return currentSet.letters.every((letter: string) => wordLetters.has(letter));
   });
 
-  const maxPangrams = wordsData[currentSet.id.toString()]?.filter(word => {
+  const maxPangrams = wordsData[currentSet.id.toString()]?.filter((word: string) => {
     const wordLetters = new Set(word.split(''));
-    return currentSet.letters.every(letter => wordLetters.has(letter));
+    return currentSet.letters.every((letter: string) => wordLetters.has(letter));
   }).length || 0;
 
   // Formatează statisticile pentru afișare
-  const getStatsData = () => {
+  const getStatsData = (): StatsData => {
     const sortedDates = Object.keys(dailyStats).sort().reverse();
     const last7Days = sortedDates.slice(0, 7);
     
     return {
       today: dailyStats[new Date().toISOString().split('T')[0]] || { score: 0, words: 0, pangrams: 0, gamesPlayed: 0 },
-      last7Days: last7Days.map(date => ({
+      last7Days: last7Days.map((date: string) => ({
         date,
         ...dailyStats[date],
         formattedDate: new Date(date).toLocaleDateString('ro-RO', { 
@@ -338,7 +337,7 @@ export default function UlciorulCuLitere() {
   };
 
   // Componentă pentru modalul de statistici
-  const StatsModal = () => {
+  const StatsModal = (): JSX.Element | null => {
     if (!showStats) return null;
     
     const stats = getStatsData();
@@ -409,28 +408,6 @@ export default function UlciorulCuLitere() {
               </div>
             </div>
 
-            {/* Istoric ultima săptămână */}
-            {stats.last7Days.length > 0 && (
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Ultima săptămână</h3>
-                <div className="space-y-2">
-                  {stats.last7Days.map((day, index) => (
-                    <div key={day.date} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="text-sm font-medium text-gray-700">{day.formattedDate}</div>
-                        {index === 0 && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Astăzi</span>}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="text-blue-600 font-medium">{day.score}p</span>
-                        <span className="text-green-600">{day.words}c</span>
-                        <span className="text-orange-600">{day.pangrams}🎯</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {stats.totalDays === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -455,19 +432,6 @@ export default function UlciorulCuLitere() {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">🏺 Ulciorul cu Litere</h1>
             <p className="text-sm text-gray-600 mb-4 italic">Jocul tradițional românesc de cuvinte</p>
-            
-            <div className="flex justify-center mb-4">
-              <button
-                onClick={toggleDiacritics}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                  withDiacritics 
-                    ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg' 
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                {withDiacritics ? '✨ Cu diacritice' : '📝 Fără diacritice'}
-              </button>
-            </div>
             
             <div className="flex justify-center items-center gap-4 text-sm text-gray-600 mb-4">
               <button onClick={() => switchSet('prev')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">◀</button>
@@ -524,7 +488,7 @@ export default function UlciorulCuLitere() {
                 {currentSet.center}
               </button>
               
-              {shuffledLetters.map((letter, index) => {
+              {shuffledLetters.map((letter: string, index: number) => {
                 const angle = (index * 60) * (Math.PI / 180);
                 const radius = 70;
                 const x = Math.cos(angle) * radius;
@@ -601,7 +565,7 @@ export default function UlciorulCuLitere() {
                 Cuvinte găsite ({foundWords.length}):
               </h3>
               <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                {foundWords.map((word, index) => (
+                {foundWords.map((word: string, index: number) => (
                   <span
                     key={index}
                     className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
@@ -652,7 +616,6 @@ export default function UlciorulCuLitere() {
               <li>• Cuvintele trebuie să aibă minim 4 litere</li>
               <li>• Poți folosi aceleași litere de mai multe ori</li>
               <li>• 🎯 Pangramele folosesc toate literele și dau <strong>+10 bonus puncte!</strong></li>
-              <li>• ✨ Toggle diacriticele pentru versiunea românească completă</li>
               <li>• 🏆 Explorează toate cele 10 seturi cu litere diferite</li>
               <li>• 📊 Urmărește progresul în statistici zilnice și săptămânale</li>
               <li>• Găsește toate cuvintele pentru a umple ulciorul! 🌻</li>
