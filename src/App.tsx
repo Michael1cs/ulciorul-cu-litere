@@ -46,7 +46,8 @@ export default function UlciorulCuLitere() {
     { letters: ['O', 'P', 'T', 'I', 'U', 'N', 'E'], center: 'O', id: 7 },
     { letters: ['A', 'B', 'S', 'O', 'L', 'U', 'T'], center: 'A', id: 8 },
     { letters: ['E', 'X', 'P', 'L', 'I', 'C', 'A'], center: 'E', id: 9 },
-    { letters: ['I', 'M', 'P', 'O', 'R', 'T', 'A'], center: 'I', id: 10 }
+    { letters: ['I', 'M', 'P', 'O', 'R', 'T', 'A'], center: 'I', id: 10 },
+    { letters: ['Ă', 'T', 'A', 'R', 'I', 'M', 'U'], center: 'Ă', id: 11 }
   ];
 
   // Dicționare complete din fișierul JSON
@@ -60,7 +61,8 @@ export default function UlciorulCuLitere() {
     "7": ["ENOT", "EONI", "EPOPEE", "EPOPEI", "EPOPEII", "EPOPT", "OPTIUNE", "OPTIUNI", "OPTIUNEI", "OPTIUNILOR", "UNITE", "UNITEI", "UNITELE", "PUNCT", "PUNCTE", "PUNCTUL", "TUNET", "TUNETE", "POTUN", "POTUNI"],
     "8": ["ABAT", "ABAUA", "ABBA", "ABLAUT", "ABOLLA", "ABSOLUT", "ABSOLUTA", "ABSOLUTE", "ABSOLUTUL", "ATLAS", "ATLASUL", "LOTUS", "LOTUSUL", "SLAB", "SLABA", "SLABI", "TABLA", "TABLE", "TABLEI", "TABU"],
     "9": ["ACACIEI", "ACACIILE", "ACEA", "ACEEA", "ACEI", "ACEIA", "ACEL", "ACELA", "ACELE", "ACELEA", "ACELEI", "ACELEIA", "EXPLIC", "EXPLICAM", "EXPLICATI", "EXPLICAT", "PACE", "PACEI", "PACEA", "ALEX", "PLACE", "PLACEI", "PLACEA", "PLICA"],
-    "10": ["AIOR", "AIORI", "AIRA", "AMARI", "AMATORI", "AMATORII", "AMIMIA", "AMIMII", "AMORTI", "APARI", "APARITOR", "APATIA", "APATII", "APATIT", "APOI", "APORIA", "APORII", "APORTORI", "APRIAT", "APRIORI", "IMPORT", "IMPORTA", "IMPORTAM", "IMPORTATI", "IMPORTAT", "PRIMI", "PRIMII", "OPRIT", "OPRITA", "PROMPT", "PRIMAR"]
+    "10": ["AIOR", "AIORI", "AIRA", "AMARI", "AMATORI", "AMATORII", "AMIMIA", "AMIMII", "AMORTI", "APARI", "APARITOR", "APATIA", "APATII", "APATIT", "APOI", "APORIA", "APORII", "APORTORI", "APRIAT", "APRIORI", "IMPORT", "IMPORTA", "IMPORTAM", "IMPORTATI", "IMPORTAT", "PRIMI", "PRIMII", "OPRIT", "OPRITA", "PROMPT", "PRIMAR"],
+    "11": ["MĂRIT", "MĂRITA", "MĂRITE", "MĂRITĂ", "MĂRAR", "MĂRAR", "MĂTURA", "MĂTURĂ", "MĂTURI", "MĂTURIT", "AMĂRI", "AMĂRIT", "AMĂRÂT", "AMĂRÂȚI", "AMĂRIȚI", "RĂUTATE", "RĂUTAT", "RĂMÂI", "RĂMÂIT", "MĂRUȚI", "MĂRUȚIU", "MĂRIMEA", "MĂRIMII", "TĂRÂM", "TĂRÂMURI", "RĂRIT", "RĂRITA", "RĂRITE", "RĂREA", "RÂMAT", "RÂMAȚI", "RÂMIT"]
   };
 
   const [currentSet, setCurrentSet] = useState<LetterSet>(letterSets[0]);
@@ -440,7 +442,7 @@ export default function UlciorulCuLitere() {
                   <Trophy className="w-4 h-4 text-yellow-600" />
                   <span>Punctaj: {score}</span>
                 </div>
-                <div>Set: {currentSet.id}/10</div>
+                <div>Set: {currentSet.id}/11</div>
                 <div>Cuvinte: {foundWords.length}/{totalWords}</div>
               </div>
               <button onClick={() => switchSet('next')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">▶</button>
@@ -616,7 +618,7 @@ export default function UlciorulCuLitere() {
               <li>• Cuvintele trebuie să aibă minim 4 litere</li>
               <li>• Poți folosi aceleași litere de mai multe ori</li>
               <li>• 🎯 Pangramele folosesc toate literele și dau <strong>+10 bonus puncte!</strong></li>
-              <li>• 🏆 Explorează toate cele 10 seturi cu litere diferite</li>
+              <li>• 🏆 Explorează toate cele 11 seturi cu litere diferite</li>
               <li>• 📊 Urmărește progresul în statistici zilnice și săptămânale</li>
               <li>• Găsește toate cuvintele pentru a umple ulciorul! 🌻</li>
             </ul>
