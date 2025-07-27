@@ -1,10 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Shuffle, Delete, RefreshCw, ArrowLeft } from 'lucide-react';
-import wordsData from './words.json';
-
-const UlciorulCuLitere = () => {
-  // Dicționarul complet din JSON
-  const wordDictionary = wordsData;
+import React, { useState, useEffect, useCallback } from 'react';
+import { Shuffle, RotateCcw, Trophy, Lightbulb, BookOpen } from 'lucide-react';
 
 export default function UlciorulCuLitere() {
   const letterSets = [
