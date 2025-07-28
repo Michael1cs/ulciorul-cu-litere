@@ -40,6 +40,7 @@ interface DailySetProgress {
   score: number;
   date: string;
   setId: number;
+  hintsUsed?: number;
 }
 
 export default function UlciorulCuLitere() {
@@ -86,6 +87,7 @@ export default function UlciorulCuLitere() {
   const [dailyStats, setDailyStats] = useState<Record<string, DailyStats>>({});
   const [generalStats, setGeneralStats] = useState<GeneralStats>({ totalGames: 0, totalScore: 0, streak: 0 });
   const [dailySetProgress, setDailySetProgress] = useState<Record<string, DailySetProgress>>({});
+  const [hintsUsed, setHintsUsed] = useState<number>(0);
 
   const shuffleLetters = useCallback(() => {
     const letters = currentSet.letters.filter((letter: string) => letter !== currentSet.center);
@@ -154,6 +156,97 @@ export default function UlciorulCuLitere() {
     shuffleLetters();
   }, [currentSet, shuffleLetters]);
 
+  // Funcție pentru a da hint-uri reale
+  const getHint = (): void => {
+    // Limitez la maxim 5 hint-uri per set
+    if (hintsUsed >= 5) {
+      setMessage('🚫 Ai folosit deja 5 hint-uri pentru acest set! Încearcă să continui singur! 💪');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
+    const setId = currentSet.id.toString();
+    const availableWords = wordsData[setId] || [];
+    const remainingWords = availableWords.filter(word => !foundWords.includes(addSimpleDiacritics(word)));
+    
+    if (remainingWords.length === 0) {
+      setMessage('🎉 Felicitări! Ai găsit toate cuvintele disponibile!');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
+    setHintsUsed(prev => prev + 1);
+
+    // Tipuri diferite de hint-uri
+    const hintTypes = [
+      // Hint 1: Arată prima literă și lungimea
+      () => {
+        const randomWord = remainingWords[Math.floor(Math.random() * remainingWords.length)];
+        const displayWord = addSimpleDiacritics(randomWord);
+        const hint = displayWord[0] + '_'.repeat(displayWord.length - 1);
+        setMessage(`💡 Hint: Există un cuvânt de ${displayWord.length} litere: "${hint}"`);
+      },
+      
+      // Hint 2: Numărul de cuvinte care încep cu o literă
+      () => {
+        const letterCounts: Record<string, number> = {};
+        remainingWords.forEach(word => {
+          const firstLetter = addSimpleDiacritics(word)[0];
+          letterCounts[firstLetter] = (letterCounts[firstLetter] || 0) + 1;
+        });
+        
+        const letters = Object.keys(letterCounts);
+        const randomLetter = letters[Math.floor(Math.random() * letters.length)];
+        const count = letterCounts[randomLetter];
+        
+        setMessage(`💡 Hint: Există ${count} cuvânt${count > 1 ? 'e' : ''} care încep cu "${randomLetter}"`);
+      },
+      
+      // Hint 3: Verifică dacă există pangrame
+      () => {
+        const remainingPangrams = remainingWords.filter(word => {
+          const wordLetters = new Set(word.split(''));
+          return currentSet.letters.every(letter => wordLetters.has(letter));
+        });
+        
+        if (remainingPangrams.length > 0) {
+          setMessage(`💡 Hint: Mai există ${remainingPangrams.length} pangram${remainingPangrams.length > 1 ? 'e' : ''} de găsit! 🎯`);
+        } else {
+          setMessage(`💡 Hint: Nu mai există pangrame de găsit în acest set.`);
+        }
+      },
+      
+      // Hint 4: Cuvinte cu o anumită lungime
+      () => {
+        const wordsByLength: Record<number, number> = {};
+        remainingWords.forEach(word => {
+          const length = addSimpleDiacritics(word).length;
+          wordsByLength[length] = (wordsByLength[length] || 0) + 1;
+        });
+        
+        const lengths = Object.keys(wordsByLength).map(Number);
+        const randomLength = lengths[Math.floor(Math.random() * lengths.length)];
+        const count = wordsByLength[randomLength];
+        
+        setMessage(`💡 Hint: Există ${count} cuvânt${count > 1 ? 'e' : ''} de ${randomLength} litere`);
+      }
+    ];
+
+    // Alege un tip random de hint
+    const randomHintType = hintTypes[Math.floor(Math.random() * hintTypes.length)];
+    randomHintType();
+    
+    // Adaugă un avertisment când se apropie de limită
+    if (hintsUsed === 4) {
+      setTimeout(() => {
+        setMessage('⚠️ Încă un hint rămas pentru acest set!');
+        setTimeout(() => setMessage(''), 2000);
+      }, 5500);
+    }
+    
+    setTimeout(() => setMessage(''), 5000);
+  };
+
   // Salvează progresul setului curent
   const saveSetProgress = (): void => {
     const today = new Date().toISOString().split('T')[0];
@@ -166,7 +259,8 @@ export default function UlciorulCuLitere() {
           foundWords: [...foundWords],
           score: score,
           date: today,
-          setId: currentSet.id
+          setId: currentSet.id,
+          hintsUsed: hintsUsed
         }
       };
       
@@ -186,19 +280,21 @@ export default function UlciorulCuLitere() {
     if (progress && progress.date === today) {
       setFoundWords([...progress.foundWords]);
       setScore(progress.score);
+      setHintsUsed(progress.hintsUsed || 0);
       setMessage('Progresul pentru astăzi a fost restaurat! 🎯');
       setTimeout(() => setMessage(''), 3000);
     } else {
       // Reset pentru ziua nouă sau set nou
       setFoundWords([]);
       setScore(0);
+      setHintsUsed(0);
       setMessage('');
     }
   };
 
   // Salvează progresul automat când se schimbă cuvintele găsite sau scorul
   useEffect(() => {
-    if (foundWords.length > 0 && currentSet.id) {
+    if (currentSet.id) {
       const today = new Date().toISOString().split('T')[0];
       const progressKey = `${today}-${currentSet.id}`;
       
@@ -209,7 +305,8 @@ export default function UlciorulCuLitere() {
             foundWords: [...foundWords],
             score: score,
             date: today,
-            setId: currentSet.id
+            setId: currentSet.id,
+            hintsUsed: hintsUsed
           }
         };
         
@@ -219,7 +316,7 @@ export default function UlciorulCuLitere() {
         console.error('Eroare la salvarea progresului:', error);
       }
     }
-  }, [foundWords, score, currentSet.id]);
+  }, [foundWords, score, currentSet.id, hintsUsed]);
 
   const addSimpleDiacritics = (word: string): string => {
     if (!withDiacritics) return word;
@@ -355,6 +452,7 @@ export default function UlciorulCuLitere() {
     const randomSet = letterSets[Math.floor(Math.random() * letterSets.length)];
     setCurrentSet(randomSet);
     setCurrentWord('');
+    setHintsUsed(0); // Reset hints counter
     
     // Încarcă progresul pentru noul set (dacă există pentru astăzi)
     setTimeout(() => loadSetProgress(randomSet.id), 100);
@@ -695,11 +793,12 @@ export default function UlciorulCuLitere() {
               Statistici
             </button>
             <button
-              onClick={() => setMessage(foundWords.length > 0 ? `Ai găsit ${foundWords.length} din ${totalWords} cuvinte! Continuă să cauți! 🔍` : 'Încearcă să formezi cuvinte cu literele din ulcior! 🏺')}
-              className="px-4 md:px-6 py-2 md:py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-sm md:text-base"
+              onClick={getHint}
+              disabled={hintsUsed >= 5}
+              className={`px-4 md:px-6 py-2 md:py-3 ${hintsUsed >= 5 ? 'bg-gray-400 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600'} text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-sm md:text-base`}
             >
               <Lightbulb className="w-4 h-4" />
-              Hint
+              Hint {hintsUsed > 0 && `(${hintsUsed}/5)`}
             </button>
           </div>
 
@@ -713,13 +812,14 @@ export default function UlciorulCuLitere() {
               <li>• Cuvintele trebuie să aibă minim 4 litere</li>
               <li>• Poți folosi aceleași litere de mai multe ori</li>
               <li>• 🎯 Pangramele folosesc toate literele și dau <strong>+10 bonus puncte!</strong></li>
+              <li>• 💡 Folosește butonul Hint pentru sugestii utile (maxim 5 per set)</li>
               <li>• 🏆 Explorează toate cele 14 seturi cu litere diferite</li>
               <li>• 📊 Urmărește progresul în statistici zilnice și săptămânale</li>
               <li>• Găsește toate cuvintele pentru a umple ulciorul! 🌻</li>
             </ul>
             
             <div className="mt-3 p-2 bg-amber-100 rounded text-xs md:text-sm text-amber-800">
-              💡 <strong>Sfat:</strong> Progresul se salvează automat pe 24h per set! Pangramele primesc +10 bonus puncte!
+              💡 <strong>Sfat:</strong> Progresul se salvează automat pe 24h per set! Folosește butonul Hint pentru sugestii utile!
             </div>
           </div>
 
