@@ -35,6 +35,13 @@ interface StatsData {
   averageScore: number;
 }
 
+interface DailySetProgress {
+  foundWords: string[];
+  score: number;
+  date: string;
+  setId: number;
+}
+
 export default function UlciorulCuLitere() {
   const letterSets: LetterSet[] = [
     { letters: ['A', 'S', 'T', 'R', 'I', 'N', 'E'], center: 'A', id: 1 },
@@ -47,7 +54,10 @@ export default function UlciorulCuLitere() {
     { letters: ['A', 'B', 'S', 'O', 'L', 'U', 'T'], center: 'A', id: 8 },
     { letters: ['E', 'X', 'P', 'L', 'I', 'C', 'A'], center: 'E', id: 9 },
     { letters: ['I', 'M', 'P', 'O', 'R', 'T', 'A'], center: 'I', id: 10 },
-    { letters: ['Ă', 'T', 'A', 'R', 'I', 'M', 'U'], center: 'Ă', id: 11 }
+    { letters: ['Ă', 'T', 'A', 'R', 'I', 'M', 'U'], center: 'Ă', id: 11 },
+    { letters: ['Î', 'N', 'T', 'R', 'E', 'A', 'G'], center: 'Î', id: 12 },
+    { letters: ['Ș', 'T', 'I', 'R', 'E', 'A', 'N'], center: 'Ș', id: 13 },
+    { letters: ['Ț', 'A', 'R', 'Ă', 'N', 'I', 'E'], center: 'Ț', id: 14 }
   ];
 
   // Dicționare complete din fișierul JSON
@@ -75,6 +85,7 @@ export default function UlciorulCuLitere() {
   const [showStats, setShowStats] = useState<boolean>(false);
   const [dailyStats, setDailyStats] = useState<Record<string, DailyStats>>({});
   const [generalStats, setGeneralStats] = useState<GeneralStats>({ totalGames: 0, totalScore: 0, streak: 0 });
+  const [dailySetProgress, setDailySetProgress] = useState<Record<string, DailySetProgress>>({});
 
   const shuffleLetters = useCallback(() => {
     const letters = currentSet.letters.filter((letter: string) => letter !== currentSet.center);
@@ -143,6 +154,73 @@ export default function UlciorulCuLitere() {
     shuffleLetters();
   }, [currentSet, shuffleLetters]);
 
+  // Salvează progresul setului curent
+  const saveSetProgress = (): void => {
+    const today = new Date().toISOString().split('T')[0];
+    const progressKey = `${today}-${currentSet.id}`;
+    
+    try {
+      const newProgress = {
+        ...dailySetProgress,
+        [progressKey]: {
+          foundWords: [...foundWords],
+          score: score,
+          date: today,
+          setId: currentSet.id
+        }
+      };
+      
+      setDailySetProgress(newProgress);
+      localStorage.setItem('ulciorul_set_progress', JSON.stringify(newProgress));
+    } catch (error) {
+      console.error('Eroare la salvarea progresului:', error);
+    }
+  };
+
+  // Încarcă progresul pentru setul curent
+  const loadSetProgress = (setId: number): void => {
+    const today = new Date().toISOString().split('T')[0];
+    const progressKey = `${today}-${setId}`;
+    const progress = dailySetProgress[progressKey];
+    
+    if (progress && progress.date === today) {
+      setFoundWords([...progress.foundWords]);
+      setScore(progress.score);
+      setMessage('Progresul pentru astăzi a fost restaurat! 🎯');
+      setTimeout(() => setMessage(''), 3000);
+    } else {
+      // Reset pentru ziua nouă sau set nou
+      setFoundWords([]);
+      setScore(0);
+      setMessage('');
+    }
+  };
+
+  // Salvează progresul automat când se schimbă cuvintele găsite sau scorul
+  useEffect(() => {
+    if (foundWords.length > 0 && currentSet.id) {
+      const today = new Date().toISOString().split('T')[0];
+      const progressKey = `${today}-${currentSet.id}`;
+      
+      try {
+        const newProgress = {
+          ...dailySetProgress,
+          [progressKey]: {
+            foundWords: [...foundWords],
+            score: score,
+            date: today,
+            setId: currentSet.id
+          }
+        };
+        
+        setDailySetProgress(newProgress);
+        localStorage.setItem('ulciorul_set_progress', JSON.stringify(newProgress));
+      } catch (error) {
+        console.error('Eroare la salvarea progresului:', error);
+      }
+    }
+  }, [foundWords, score, currentSet.id]);
+
   const addSimpleDiacritics = (word: string): string => {
     if (!withDiacritics) return word;
     
@@ -157,7 +235,15 @@ export default function UlciorulCuLitere() {
       .replace(/\bMARIT\b/g, 'MĂRIT')
       .replace(/\bMATURA\b/g, 'MĂTURĂ')
       .replace(/\bRAREA\b/g, 'RĂREA')
-      .replace(/\bAMARI\b/g, 'AMĂRI');
+      .replace(/\bAMARI\b/g, 'AMĂRI')
+      .replace(/\bINTREGI\b/g, 'ÎNTREGI')
+      .replace(/\bINTREGA\b/g, 'ÎNTREAGĂ')
+      .replace(/\bSTIREA\b/g, 'ȘTIREA')
+      .replace(/\bSTIRI\b/g, 'ȘTIRI')
+      .replace(/\bSTIINTA\b/g, 'ȘTIINȚA')
+      .replace(/\bTARA\b/g, 'ȚARA')
+      .replace(/\bTARANI\b/g, 'ȚĂRANI')
+      .replace(/\bTINTA\b/g, 'ȚINTĂ');
   };
 
   const handleLetterClick = (letter: string): void => {
@@ -254,8 +340,10 @@ export default function UlciorulCuLitere() {
   };
 
   const newGame = (): void => {
-    // Salvează statisticile jocului curent înainte de a începe unul nou
+    // Salvează progresul setului curent înainte de a schimba
     if (foundWords.length > 0) {
+      saveSetProgress();
+      
       const currentPangrams = foundWords.filter((word: string) => {
         const wordLetters = new Set(word.replace(/[ĂÂ]/g, 'A').replace(/[ÎÍ]/g, 'I').replace(/[ȘŞ]/g, 'S').replace(/[ȚŢ]/g, 'T').split(''));
         return currentSet.letters.every((letter: string) => wordLetters.has(letter));
@@ -266,15 +354,17 @@ export default function UlciorulCuLitere() {
     
     const randomSet = letterSets[Math.floor(Math.random() * letterSets.length)];
     setCurrentSet(randomSet);
-    setFoundWords([]);
     setCurrentWord('');
-    setMessage('');
-    setScore(0);
+    
+    // Încarcă progresul pentru noul set (dacă există pentru astăzi)
+    setTimeout(() => loadSetProgress(randomSet.id), 100);
   };
 
   const switchSet = (direction: 'prev' | 'next'): void => {
-    // Salvează statisticile înainte de a schimba setul
+    // Salvează progresul setului curent înainte de a schimba
     if (foundWords.length > 0) {
+      saveSetProgress();
+      
       const currentPangrams = foundWords.filter((word: string) => {
         const wordLetters = new Set(word.replace(/[ĂÂ]/g, 'A').replace(/[ÎÍ]/g, 'I').replace(/[ȘŞ]/g, 'S').replace(/[ȚŢ]/g, 'T').split(''));
         return currentSet.letters.every((letter: string) => wordLetters.has(letter));
@@ -292,11 +382,12 @@ export default function UlciorulCuLitere() {
       newIndex = currentIndex < letterSets.length - 1 ? currentIndex + 1 : 0;
     }
     
-    setCurrentSet(letterSets[newIndex]);
-    setFoundWords([]);
+    const newSet = letterSets[newIndex];
+    setCurrentSet(newSet);
     setCurrentWord('');
-    setMessage('');
-    setScore(0);
+    
+    // Încarcă progresul pentru noul set (dacă există pentru astăzi)
+    setTimeout(() => loadSetProgress(newSet.id), 100);
   };
 
   const toggleDiacritics = (): void => {
@@ -427,26 +518,26 @@ export default function UlciorulCuLitere() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-yellow-50 to-blue-50 p-3 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-blue-50 p-3 md:p-6">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8 border-2 border-yellow-200">
+        <div className="bg-white rounded-2xl shadow-xl p-4 md:p-8 border-2 border-amber-400">
           
           <div className="flex justify-center mb-4">
             <div className="text-2xl">🌻 🏺 🌻</div>
           </div>
 
-          <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">🏺 Ulciorul cu Litere</h1>
-            <p className="text-xs sm:text-sm text-gray-600 mb-4 italic">Jocul tradițional românesc de cuvinte</p>
+          <div className="text-center mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">🏺 Ulciorul cu Litere</h1>
+            <p className="text-sm md:text-base text-gray-600 mb-4 italic">Jocul tradițional românesc de cuvinte</p>
             
-            <div className="flex justify-center items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-4">
+            <div className="flex justify-center items-center gap-2 md:gap-4 text-sm md:text-base text-gray-600 mb-4">
               <button onClick={() => switchSet('prev')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">◀</button>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-1">
                   <Trophy className="w-4 h-4 text-yellow-600" />
                   <span>Punctaj: {score}</span>
                 </div>
-                <div>Set: {currentSet.id}/11</div>
+                <div>Set: {currentSet.id}/14</div>
                 <div>Cuvinte: {foundWords.length}/{totalWords}</div>
               </div>
               <button onClick={() => switchSet('next')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">▶</button>
@@ -456,47 +547,47 @@ export default function UlciorulCuLitere() {
               <div className="mb-4">
                 <div className="flex justify-center items-center gap-2 text-sm">
                   <span className="text-2xl">🎯</span>
-                  <span className="text-orange-600 font-medium">Pangrame: {pangrams.length}/{maxPangrams}</span>
+                  <span className="text-amber-600 font-medium">Pangrame: {pangrams.length}/{maxPangrams}</span>
                 </div>
               </div>
             )}
             
-            <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+            <div className="w-full bg-stone-100 rounded-full h-3 mb-2">
               <div 
-                className="bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 h-3 rounded-full transition-all duration-500 ease-in-out"
+                className="bg-gradient-to-r from-red-400 via-amber-400 to-blue-500 h-3 rounded-full transition-all duration-500 ease-in-out"
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
             <div className="text-xs text-gray-500">{progress.toFixed(1)}% din cuvinte găsite</div>
 
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-4 p-2 sm:p-3 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-3 gap-2 md:gap-4 mt-4 p-2 md:p-3 bg-amber-50 rounded-lg border border-amber-200">
               <div className="text-center">
-                <div className="text-base sm:text-lg font-bold text-blue-600">{score}</div>
-                <div className="text-xs text-gray-600">Puncte</div>
+                <div className="text-base md:text-lg font-bold text-red-600">{score}</div>
+                <div className="text-xs md:text-sm text-red-500">Puncte</div>
               </div>
               <div className="text-center">
-                <div className="text-base sm:text-lg font-bold text-green-600">{foundWords.length}</div>
-                <div className="text-xs text-gray-600">Găsite</div>
+                <div className="text-base md:text-lg font-bold text-blue-600">{foundWords.length}</div>
+                <div className="text-xs md:text-sm text-blue-500">Găsite</div>
               </div>
               <div className="text-center">
-                <div className="text-base sm:text-lg font-bold text-orange-600">{pangrams.length}</div>
-                <div className="text-xs text-gray-600">Pangrame</div>
+                <div className="text-base md:text-lg font-bold text-amber-600">{pangrams.length}</div>
+                <div className="text-xs md:text-sm text-amber-500">Pangrame</div>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-center mb-8 sm:mb-12">
-            <div className="relative w-32 sm:w-40 h-32 sm:h-40">
+          <div className="flex justify-center mb-8 md:mb-12">
+            <div className="relative w-32 md:w-40 h-32 md:h-40">
               <button
                 onClick={() => handleLetterClick(currentSet.center)}
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 sm:w-16 h-12 sm:h-16 bg-yellow-400 hover:bg-yellow-500 rounded-lg text-xl sm:text-2xl font-bold text-gray-800 transition-all duration-200 shadow-lg z-10 hover:scale-105"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 md:w-16 h-12 md:h-16 bg-amber-400 hover:bg-amber-500 rounded-lg text-xl md:text-2xl font-bold text-white transition-all duration-200 shadow-lg z-10 hover:scale-105"
               >
                 {currentSet.center}
               </button>
               
               {shuffledLetters.map((letter: string, index: number) => {
                 const angle = (index * 60) * (Math.PI / 180);
-                const radius = 56; // Reduced from 70 for mobile
+                const radius = 65; // Radius optimizat pentru toate ecranele
                 const x = Math.cos(angle) * radius;
                 const y = Math.sin(angle) * radius;
                 
@@ -504,10 +595,10 @@ export default function UlciorulCuLitere() {
                   <button
                     key={index}
                     onClick={() => handleLetterClick(letter)}
-                    className="absolute w-10 sm:w-14 h-10 sm:h-14 bg-gray-200 hover:bg-gray-300 rounded-lg text-lg sm:text-xl font-bold text-gray-800 transition-all duration-200 shadow-md hover:scale-105"
+                    className="absolute w-10 md:w-14 h-10 md:h-14 bg-stone-100 hover:bg-stone-200 rounded-lg text-lg md:text-xl font-bold text-stone-700 transition-all duration-200 shadow-md hover:scale-105"
                     style={{
-                      left: `calc(50% + ${x}px - ${20}px)`, // Adjusted for smaller buttons
-                      top: `calc(50% + ${y}px - ${20}px)`
+                      left: `calc(50% + ${x}px - 20px)`,
+                      top: `calc(50% + ${y}px - 20px)`
                     }}
                   >
                     {letter}
@@ -518,66 +609,66 @@ export default function UlciorulCuLitere() {
           </div>
 
           <div className="text-center mb-6">
-            <div className="bg-gray-100 rounded-lg p-3 sm:p-4 mb-4">
+            <div className="bg-gray-100 rounded-lg p-3 md:p-4 mb-4">
               <input
                 type="text"
                 value={currentWord}
                 onChange={(e) => setCurrentWord(e.target.value.toUpperCase())}
-                className="text-xl sm:text-2xl font-mono text-center bg-transparent border-none outline-none w-full"
+                className="text-xl md:text-2xl font-mono text-center bg-transparent border-none outline-none w-full"
                 placeholder="Scrie cuvântul aici..."
               />
             </div>
             
             {message && (
               <div className={`p-3 rounded-lg text-sm font-medium transition-all duration-300 ${
-                message.includes('Bravo') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                message.includes('Bravo') ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-700'
               }`}>
                 {message}
               </div>
             )}
           </div>
 
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8">
+          <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-8">
             <button
               onClick={deleteLastLetter}
-              className="px-3 sm:px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm sm:text-base"
+              className="px-3 md:px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-sm md:text-base"
             >
               Șterge
             </button>
             <button
               onClick={clearWord}
-              className="px-3 sm:px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-sm sm:text-base"
+              className="px-3 md:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm md:text-base"
             >
               Curăță
             </button>
             <button
               onClick={submitWord}
-              className="px-4 sm:px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors text-sm sm:text-base"
+              className="px-4 md:px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors text-sm md:text-base"
             >
               Trimite
             </button>
             <button
               onClick={shuffleLetters}
-              className="px-3 sm:px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
+              className="px-3 md:px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors"
             >
               <Shuffle className="w-4 h-4" />
             </button>
           </div>
 
           {foundWords.length > 0 && (
-            <div className="mb-4 sm:mb-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <BookOpen className="w-4 sm:w-5 h-4 sm:h-5" />
+            <div className="mb-4 md:mb-6">
+              <h3 className="text-base md:text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <BookOpen className="w-4 md:w-5 h-4 md:h-5" />
                 Cuvinte găsite ({foundWords.length}):
               </h3>
-              <div className="flex flex-wrap gap-1 sm:gap-2 max-h-32 overflow-y-auto">
+              <div className="flex flex-wrap gap-1 md:gap-2 max-h-32 overflow-y-auto">
                 {foundWords.map((word: string, index: number) => (
                   <span
                     key={index}
-                    className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${
+                    className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium transition-all duration-200 ${
                       pangrams.includes(word) 
-                        ? 'bg-orange-100 text-orange-800 border border-orange-300' 
-                        : 'bg-green-100 text-green-800'
+                        ? 'bg-amber-100 text-amber-700 border border-amber-300' 
+                        : 'bg-stone-100 text-stone-700'
                     }`}
                   >
                     {word}
@@ -588,47 +679,47 @@ export default function UlciorulCuLitere() {
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-6">
+          <div className="flex flex-col md:flex-row justify-center gap-3 md:gap-4 mb-6">
             <button
               onClick={newGame}
-              className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-sm sm:text-base"
+              className="px-4 md:px-6 py-2 md:py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-sm md:text-base"
             >
               <RotateCcw className="w-4 h-4" />
               Joc Nou
             </button>
             <button
               onClick={() => setShowStats(true)}
-              className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-sm sm:text-base"
+              className="px-4 md:px-6 py-2 md:py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-sm md:text-base"
             >
               <BarChart3 className="w-4 h-4" />
               Statistici
             </button>
             <button
               onClick={() => setMessage(foundWords.length > 0 ? `Ai găsit ${foundWords.length} din ${totalWords} cuvinte! Continuă să cauți! 🔍` : 'Încearcă să formezi cuvinte cu literele din ulcior! 🏺')}
-              className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-sm sm:text-base"
+              className="px-4 md:px-6 py-2 md:py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl text-sm md:text-base"
             >
               <Lightbulb className="w-4 h-4" />
               Hint
             </button>
           </div>
 
-          <div className="p-3 sm:p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-            <h4 className="font-semibold text-yellow-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+          <div className="p-3 md:p-4 bg-amber-50 rounded-lg border border-amber-400">
+            <h4 className="font-semibold text-amber-800 mb-2 flex items-center gap-2 text-sm md:text-base">
               🏺 Cum să joci Ulciorul cu Litere:
             </h4>
-            <ul className="text-xs sm:text-sm text-yellow-700 space-y-1">
+            <ul className="text-xs md:text-sm text-amber-700 space-y-1">
               <li>• Formează cuvinte cu literele din ulcior</li>
               <li>• Litera aurită (centrală) trebuie să apară în toate cuvintele</li>
               <li>• Cuvintele trebuie să aibă minim 4 litere</li>
               <li>• Poți folosi aceleași litere de mai multe ori</li>
               <li>• 🎯 Pangramele folosesc toate literele și dau <strong>+10 bonus puncte!</strong></li>
-              <li>• 🏆 Explorează toate cele 11 seturi cu litere diferite</li>
+              <li>• 🏆 Explorează toate cele 14 seturi cu litere diferite</li>
               <li>• 📊 Urmărește progresul în statistici zilnice și săptămânale</li>
               <li>• Găsește toate cuvintele pentru a umple ulciorul! 🌻</li>
             </ul>
             
-            <div className="mt-3 p-2 bg-yellow-100 rounded text-xs text-yellow-800">
-              💡 <strong>Sfat:</strong> Cuvintele greșite se șterg automat! Pangramele primesc +10 bonus puncte!
+            <div className="mt-3 p-2 bg-amber-100 rounded text-xs md:text-sm text-amber-800">
+              💡 <strong>Sfat:</strong> Progresul se salvează automat pe 24h per set! Pangramele primesc +10 bonus puncte!
             </div>
           </div>
 
