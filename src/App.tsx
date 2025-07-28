@@ -675,28 +675,29 @@ export default function UlciorulCuLitere() {
           </div>
 
           <div className="flex justify-center mb-8 md:mb-12">
-            <div className="relative w-32 md:w-40 h-32 md:h-40">
+            <div className="relative w-36 md:w-48 h-36 md:h-48">
               <button
                 onClick={() => handleLetterClick(currentSet.center)}
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 md:w-16 h-12 md:h-16 bg-amber-400 hover:bg-amber-500 rounded-lg text-xl md:text-2xl font-bold text-white transition-all duration-200 shadow-lg z-10 hover:scale-105"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 md:w-20 h-14 md:h-20 bg-amber-400 hover:bg-amber-500 rounded-lg text-xl md:text-3xl font-bold text-white transition-all duration-200 shadow-lg z-10 hover:scale-105"
               >
                 {currentSet.center}
               </button>
               
               {shuffledLetters.map((letter: string, index: number) => {
                 const angle = (index * 60) * (Math.PI / 180);
-                const radius = 65; // Radius optimizat pentru toate ecranele
+                const radius = window.innerWidth >= 768 ? 85 : 65; // Radius mai mare pe desktop
                 const x = Math.cos(angle) * radius;
                 const y = Math.sin(angle) * radius;
+                const buttonSize = window.innerWidth >= 768 ? 32 : 24; // Button offset mai mare pe desktop
                 
                 return (
                   <button
                     key={index}
                     onClick={() => handleLetterClick(letter)}
-                    className="absolute w-10 md:w-14 h-10 md:h-14 bg-stone-100 hover:bg-stone-200 rounded-lg text-lg md:text-xl font-bold text-stone-700 transition-all duration-200 shadow-md hover:scale-105"
+                    className="absolute w-12 md:w-16 h-12 md:h-16 bg-stone-100 hover:bg-stone-200 rounded-lg text-lg md:text-2xl font-bold text-stone-700 transition-all duration-200 shadow-md hover:scale-105"
                     style={{
-                      left: `calc(50% + ${x}px - 20px)`,
-                      top: `calc(50% + ${y}px - 20px)`
+                      left: `calc(50% + ${x}px - ${buttonSize}px)`,
+                      top: `calc(50% + ${y}px - ${buttonSize}px)`
                     }}
                   >
                     {letter}
